@@ -1,0 +1,41 @@
+[33md2f431d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev[m[33m, [m[1;31morigin/dev[m[33m)[m  video call partage ecran+bdd a tester
+[33m9d7e2f3[m Merge branch 'dev' of https://github.com/mehdi-14/owly-frontend into dev
+[33mb876205[m videocall avec patage ecran+ bdd à tester
+[33m49f4f30[m statut en ligne
+[33m35fa99c[m  video call avec qlq soucis webrtc natif
+[33m64c3709[m video call no fonctionnel simple-peer
+[33m8b5d040[m version beta apres test
+[33mec34837[m version 1.0
+[33mb59cade[m[33m ([m[1;31morigin/dev-frontend[m[33m, [m[1;32mdev-frontend[m[33m)[m icone de recherche
+[33m2518891[m reliage messagerie : recuperation conversation, recuperation messages, envoie messages, reactions, epingler
+[33m8b8ed9a[m page jeux
+[33ma6c5495[m le push correct jeux blockge
+[33me34252c[m liste blockage jeux
+[33m34b97e4[m fin jeux
+[33m345bf58[m liste blockage jeux
+[33m463ff4e[m thems+rechercher msg et jeux
+[33m2972ec1[m Résolution des conflits et nettoyage du code
+[33m030e87f[m Mes modifications locales avant pull
+[33md9249c4[m thems+rechercher messages et games
+[33mabb1f76[m thems+rechercher messages et games
+[33ma03d298[m relier modifier mot de passe au backend
+[33m0faa8e7[m recherche par username , par qr code , generation qr code depuis profil , liste contacts relié
+[33mc1e5f8e[m search qr username frontend
+[33m92b4789[m theme
+[33m7a7a30d[m jai rien changer
+[33mdc42add[m jai rien changer
+[33maa8dbb6[m Merge branch 'dev-frontend' of https://github.com/mehdi-14/owly-frontend into dev-frontend
+[33m05eb337[m profil , parametres message
+[33mb547ce6[m mise à jour video call
+[33mf216d08[m mise à jour video call
+[33ma25c3da[m mise à jour video call
+[33md63e32c[m details interfaces
+[33mc22b1f6[m auth relier/parametres/profile...
+[33m9c87c90[m interfaces parametres
+[33m72c6fed[m reliage de l'authentification login/register/OTP/mot de passe oublier
+[33m0d97fcc[m Conflit dans app.jsx résolu en ajoutant la route video-call
+[33m792ec77[m Video call primitif avec IDs socket et aucune esthétique
+[33mc6432b4[m Travail local - page Nouveau mot de passe
+[33m04b6569[m les interfaces connexion inscription otp welcome
+[33m05a1e5b[m[33m ([m[1;31morigin/preprod[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m Add .gitkeep to keep empty folders in repo
+[33m476708b[m Initial frontend setup
