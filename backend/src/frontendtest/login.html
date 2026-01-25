@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Owly - Connexion</title>
+    <link rel="stylesheet" href="test-style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-header">
+        <div class="login-logo">
+          <div class="logo-icon">🦉</div>
+          <h1>Owly</h1>
+        </div>
+        <p class="login-subtitle">Connectez-vous à votre messagerie</p>
+      </div>
+
+      <div class="login-form-container">
+        <form id="loginForm" class="login-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              placeholder="votre@email.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Mot de passe</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              placeholder="Votre mot de passe"
+            />
+          </div>
+
+          <button type="submit" class="login-btn" id="loginBtn">
+            <span class="btn-text">Se connecter</span>
+            <div class="btn-loading hidden">
+              <div class="loading-spinner"></div>
+              Connexion...
+            </div>
+          </button>
+
+          <div class="login-links">
+            <a href="#" id="forgotPassword">Mot de passe oublié ?</a>
+            <a href="#" id="showRegister">Créer un compte</a>
+          </div>
+        </form>
+
+        <!-- Formulaire d'inscription (caché par défaut) -->
+        <form id="registerForm" class="login-form hidden">
+          <div class="form-group">
+            <label for="regUsername">Nom d'utilisateur</label>
+            <input
+              type="text"
+              id="regUsername"
+              name="username"
+              required
+              placeholder="Votre pseudo"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="regEmail">Email</label>
+            <input
+              type="email"
+              id="regEmail"
+              name="email"
+              required
+              placeholder="votre@email.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="regPassword">Mot de passe</label>
+            <input
+              type="password"
+              id="regPassword"
+              name="password"
+              required
+              placeholder="Min. 8 caractères"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="regPasswordConfirm">Confirmer le mot de passe</label>
+            <input
+              type="password"
+              id="regPasswordConfirm"
+              name="passwordConfirm"
+              required
+              placeholder="Retapez votre mot de passe"
+            />
+          </div>
+
+          <button type="submit" class="login-btn" id="registerBtn">
+            <span class="btn-text">S'inscrire</span>
+            <div class="btn-loading hidden">
+              <div class="loading-spinner"></div>
+              Inscription...
+            </div>
+          </button>
+
+          <div class="login-links">
+            <a href="#" id="showLogin">Déjà un compte ? Se connecter</a>
+          </div>
+        </form>
+
+        <!-- Formulaire OTP (caché par défaut) -->
+        <form id="otpForm" class="login-form hidden">
+          <div class="otp-header">
+            <h3>Vérification par email</h3>
+            <p>Nous avons envoyé un code à <span id="otpEmail"></span></p>
+          </div>
+
+          <div class="form-group">
+            <label for="otpCode">Code de vérification</label>
+            <input
+              type="text"
+              id="otpCode"
+              name="otp"
+              required
+              placeholder="Entrez le code à 6 chiffres"
+              maxlength="6"
+            />
+          </div>
+
+          <button type="submit" class="login-btn" id="verifyOtpBtn">
+            <span class="btn-text">Vérifier</span>
+            <div class="btn-loading hidden">
+              <div class="loading-spinner"></div>
+              Vérification...
+            </div>
+          </button>
+
+          <div class="otp-actions">
+            <a href="#" id="resendOtp">Renvoyer le code</a>
+            <a href="#" id="changeEmail">Changer l'email</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Messages d'erreur/succès -->
+      <div id="messageContainer" class="message-container"></div>
+
+      <!-- Debug info -->
+      <div class="debug-info">
+        <p>
+          <strong>Backend URL:</strong>
+          <span id="backendUrl">http://localhost:5000</span>
+        </p>
+        <p>
+          <strong>Statut:</strong>
+          <span id="connectionStatus">Non connecté</span>
+        </p>
+      </div>
+    </div>
+    
+
+    <script src="login.js"></script>
+  </body>
+</html>

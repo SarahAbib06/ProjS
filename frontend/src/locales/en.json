@@ -1,0 +1,276 @@
+{
+  "login": {
+    "welcome": "Welcome back",
+    "subtitle": "Your messages are waiting",
+    "emailPlaceholder": "example@gmail.com",
+    "passwordPlaceholder": "Password",
+    "acceptTerms": "I accept the terms and conditions",
+    "connect": "Login",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "register": "Register"
+  },
+  "register": {
+    "createAccount": "Create your account",
+    "subtitle": "Join the revolution",
+    "username": "Username",
+    "email": "example@gmail.com",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "acceptTerms": "I accept the terms and conditions",
+    "signUp": "Sign up",
+    "alreadyHaveAccount": "Already have an account?",
+    "login": "Login"
+  },
+   "formCard": {
+    "leftText1": "Every conversation takes flight",
+    "leftText2": "Connect instantly with your friends, share your moments, and always stay in touch."
+  },
+  "otp": {
+  "title": "Verify your OTP code",
+  "description": "We sent a 6-digit verification code to your registered email.",
+  "code": "OTP Code",
+  "verify": "Verify and continue"
+
+},
+ "chat": {
+
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "online": "Online",
+    "inputPlaceholder": "Enter a message...",
+    "reactions": "Reactions",
+    "close": "Close",
+    "searchButton": "Search",
+    "searchPlaceholder": "Type to search..."
+
+  },
+  
+  "messages": {
+    "searchFriends": "Search among your friends..."
+  },
+  
+  "sidebar": {
+    "Owly": "Owly",
+    "Message": "Message",
+    "Groupe": "Group",
+    "Owly AI": "Owly AI",
+    "Paramètres": "Settings",
+
+    "Profile": "Profile",
+    "Jeux":"Games"
+
+  },
+  "welcome": {
+    "title": "Welcome to Owly",
+    "description": "Select a conversation from the list on the left to start chatting. You can also start a new chat or create a group in just a few clicks.",
+    "encrypted": "Your personal messages are end-to-end encrypted."
+  },
+
+  
+  
+ 
+   "profile": {
+    "profile": "Profile",
+    "personalInfo": "Personal information",
+    "personalInfoDesc": "Manage your basic profile information",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "changePhoto": "Change photo",
+    "deleteAccount": "Delete account",
+    "username": "Username",
+    "email": "Email"
+
+  },
+  "parametresMenu": {
+    "Title": "Settings",
+    "General": "General",
+    "Confidentialite": "Privacy",
+    "Notifications": "Notifications",
+    "Aide": "Help & Support",
+    "Deconnexion": "Logout"
+  },
+
+  "parametresGeneral": {
+    "Title": "General",
+    "Description": "Customize the app's appearance and language",
+    "Language": "Language",
+    "Theme": "Theme",
+
+    "English": "English",
+    "French": "French",
+    "LightMode": "Light Mode",
+    "DarkMode": "Dark Mode"
+  },
+
+  "parametresConfidentialite": {
+    "Title": "Privacy",
+    "Description": "Manage your privacy settings and data",
+    "LastLogin": "Last login",
+    "Status": "Status",
+    "BlockedUsers": "Blocked users",
+    "BlockedUsersCount": "user(s) blocked",
+    "ChangePassword": "Change password",
+    "ChangePasswordDesc": "Change your current password"
+  },
+  
+  "derniereConnexion": {
+    "Title": "Last login",
+    "Description": "Check your recent account logins",
+    "Everyone": "Everyone",
+    "NoOne": "No one"
+  },
+
+  "statut": {
+    "Title": "Status",
+    "Description": "Manage your visibility status",
+    "Everyone": "Everyone",
+    "NoOne": "No one"
+  },
+
+
+  "privacy": {
+    "BlockedUsersTitle": "Blocked Users",
+    "NoBlockedUsers": "No blocked users",
+    "BlockedUsersDescription": "Blocked users will no longer be able to call or message you.",
+
+    "Unblock": "Unblock",
+    "UnblockConfirmTitle": "Unblock this user?",
+  "UnblockConfirmText": "{{username}} will now be able to send you a message request. This person will not be notified that you unblocked them.",
+  "Cancel": "Cancel",
+  "Confirm": "Unblock"
+
+  },
+  "forgotPassword": {
+    "title": "New Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "send": "Send",
+     "subtitle":"Choose a secure password with at least 8 characters, including letters, numbers, and symbols, to effectively protect your account."
+  },
+ 
+  "modifierMotDePasse": {
+    "titre": "Change password",
+    "sousTitre": "Change your current password",
+    "motDePasseActuel": "Current password",
+    "nouveauMotDePasse": "New password",
+    "confirmerMotDePasse": "Confirm your password",
+    "enregistrer": "Save"
+
+  },
+  "infoContactModal": {
+    "mediaDocuments": "Media & Documents",
+    "themes": "Themes",
+    "addToFavorites": "Add to Favorites",
+    "archiveConversation": "Archive Conversation",
+    "lockConversation": "Lock Conversation",
+    "block": "Block",
+    "deleteConversation": "Delete Conversation"
+  },
+  
+  "chatOptions": {
+    "infoOn": "Info on",
+    "addToFavorites": "Add to Favorites",
+    "archiveConversation": "Archive Conversation",
+    "lockConversation": "Lock Conversation",
+    "block": "Block",
+    "deleteConversation": "Delete Conversation"
+  },
+
+  "themeSelector": {
+    "simpleColors": "Simple Colors",
+    "gradients": "Gradients",
+    "chooseImage": "Choose an image",
+    "removeTheme": "Remove theme",
+    "close": "Close",
+    "interactive": "Light Interactive",
+    "auto": "Day/Night",
+    "seasonal" :"seasonal"
+  },
+  "colors": {
+    "Jaune": "Yellow",
+    "Bleu": "Blue",
+    "Vert": "Green",
+    "Rose": "Pink",
+    "Rouge": "Red",
+    "Violet": "Purple",
+    "Orange": "Orange",
+    "Turquoise": "Turquoise",
+    "Gris": "Gray",
+    "Beige": "Beige",
+    "Soleil Doux": "Soft Sun",
+    "Blanc": "White"
+  },
+  "gradients": {
+    "Bleu → Rose": "Blue → Pink",
+    "Violet → Bleu": "Purple → Blue",
+    "Orange → Rouge": "Orange → Red",
+    "Bleu → Turquoise": "Blue → Turquoise",
+    "Rose → Violet": "Pink → Purple",
+    "Jaune → Orange": "Yellow → Orange",
+    "Vert → Bleu": "Green → Blue",
+    "Rouge → Violet": "Red → Purple",
+    "Gris → Noir": "Gray → Black",
+    "Bleu Lavande": "Lavender Blue",
+    "Pêche → Rose": "Peach → Pink",
+    "Arc-en-ciel doux": "Soft Rainbow"
+  },
+ 
+  "banniereNotifications": {
+    "Title": "Notification Banner",
+    "Description": "Select when banners should appear.",
+    "Never": "Never",
+    "Always": "Always",
+    "OnlyOpen": "Only when app is open"
+  },
+ 
+   "gamesPage": {
+    "choose_game": "Choose your game",
+    "back": "Back",
+    "owly_quiz": "Owly Quiz",
+    "rock_paper_scissors": "Rock Paper Scissors",
+    "memory_game": "Memory Game",
+    "tictac":"Guess the number"
+  },
+
+
+
+
+
+
+
+
+  "Media": {
+  "title": "Media, Documents",
+  "medias": "Media",
+  "documents": "Documents",
+  "nomedia": "No media",
+  "nodocuments": "No documents"
+
+},
+"parametresNotifications": {
+  "Title": "Notifications",
+  "Description": "Manage your notification preferences.",
+  
+  "Banner": "Show notification banner",
+  "BannerDesc": "Always",
+
+  "Messages": "Message notifications",
+  "MessagesDesc": "Show notifications for new messages",
+
+  "Calls": "Call notifications",
+  "CallsDesc": "Show notifications for incoming calls",
+
+  "IncomingSound": "Incoming calls",
+  "IncomingSoundDesc": "Play sound for incoming calls"
+}
+ 
+
+}
+
+
+
+
+
+

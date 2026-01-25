@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Messages Vocaux - Owly</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+
+      header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .connection-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+
+      .status-online {
+        background: #4caf50;
+      }
+
+      .status-offline {
+        background: #f44336;
+      }
+
+      .status-connecting {
+        background: #ff9800;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .section {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .form-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+
+      .input-field {
+        flex: 1;
+        min-width: 200px;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+      }
+
+      .input-field:focus {
+        outline: none;
+        border-color: #4facfe;
+      }
+
+      .btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+        min-width: 120px;
+      }
+
+      .btn-primary {
+        background: #4facfe;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #3a9bf7;
+      }
+
+      .btn-secondary {
+        background: #6c757d;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #5a6268;
+      }
+
+      .btn-record {
+        background: #e74c3c;
+        color: white;
+      }
+
+      .btn-record:hover {
+        background: #c0392b;
+      }
+
+      .btn-stop {
+        background: #f39c12;
+        color: white;
+      }
+
+      .btn-stop:hover {
+        background: #e67e22;
+      }
+
+      .btn-success {
+        background: #27ae60;
+        color: white;
+      }
+
+      .btn-success:hover {
+        background: #219a52;
+      }
+
+      .btn-danger {
+        background: #e74c3c;
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background: #c0392b;
+      }
+
+      .audio-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+      }
+
+      #recording-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #e74c3c;
+        font-weight: bold;
+      }
+
+      .pulse {
+        width: 12px;
+        height: 12px;
+        background: #e74c3c;
+        border-radius: 50%;
+        animation: pulse 0.6s infinite;
+      }
+
+      #audio-preview {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border: 2px solid #4facfe;
+      }
+
+      .messages-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        background: #f8f9fa;
+      }
+
+      .message {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .message.audio {
+        border-left: 4px solid #4facfe;
+      }
+
+      .message-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 5px;
+      }
+
+      .audio-player {
+        width: 100%;
+        margin: 10px 0;
+      }
+
+      .logs-container {
+        max-height: 200px;
+        overflow-y: auto;
+        background: #1a1a1a;
+        color: #00ff00;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+      }
+
+      .log-entry {
+        margin: 5px 0;
+        padding: 2px 0;
+      }
+
+      .log-info {
+        color: #00ff00;
+      }
+      .log-warn {
+        color: #ffff00;
+      }
+      .log-error {
+        color: #ff0000;
+      }
+      .log-success {
+        color: #00ffff;
+      }
+
+      @media (max-width: 600px) {
+        .form-group {
+          flex-direction: column;
+        }
+
+        .btn {
+          min-width: 100%;
+        }
+
+        header {
+          flex-direction: column;
+          gap: 10px;
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🔊 Test Messages Vocaux - Owly</h1>
+        <div class="connection-status">
+          <span id="status">Déconnecté</span>
+          <div id="status-indicator" class="status-offline"></div>
+        </div>
+      </header>
+
+      <!-- Section Connexion -->
+      <section id="login-section" class="section">
+        <h2>Connexion</h2>
+        <div class="form-group">
+          <input
+            type="text"
+            id="token-input"
+            placeholder="Token JWT"
+            class="input-field"
+          />
+          <button id="connect-btn" class="btn btn-primary">Se connecter</button>
+        </div>
+      </section>
+
+      <!-- Section Conversation -->
+      <section id="conversation-section" class="section hidden">
+        <h2>Conversation</h2>
+        <div class="form-group">
+          <input
+            type="text"
+            id="conversation-id"
+            placeholder="ID de conversation"
+            class="input-field"
+          />
+          <button id="join-conversation-btn" class="btn btn-secondary">
+            Rejoindre
+          </button>
+        </div>
+      </section>
+
+      <!-- Section Enregistrement Audio -->
+      <section id="audio-section" class="section hidden">
+        <h2>Message Vocal</h2>
+        <div class="audio-controls">
+          <button id="start-record-btn" class="btn btn-record">
+            🎤 Démarrer l'enregistrement
+          </button>
+          <button id="stop-record-btn" class="btn btn-stop hidden">
+            ⏹️ Arrêter
+          </button>
+          <div id="recording-status" class="hidden">
+            <div class="pulse"></div>
+            <span>Enregistrement en cours...</span>
+          </div>
+        </div>
+
+        <!-- Aperçu audio -->
+        <div id="audio-preview" class="hidden">
+          <h3>Aperçu:</h3>
+          <audio id="preview-player" controls></audio>
+          <button id="send-audio-btn" class="btn btn-success">
+            📤 Envoyer le message
+          </button>
+          <button id="cancel-audio-btn" class="btn btn-danger">
+            ❌ Annuler
+          </button>
+        </div>
+      </section>
+
+      <!-- Section Messages -->
+      <section id="messages-section" class="section hidden">
+        <h2>Messages en temps réel</h2>
+        <div id="messages-container" class="messages-container">
+          <!-- Les messages apparaîtront ici -->
+        </div>
+      </section>
+
+      <!-- Section Logs -->
+      <section id="logs-section" class="section">
+        <h2>Logs de débogage</h2>
+        <div id="logs-container" class="logs-container"></div>
+        <button id="clear-logs-btn" class="btn btn-secondary">
+          Effacer les logs
+        </button>
+      </section>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      class AudioChatTester {
+        constructor() {
+          this.socket = null;
+          this.isRecording = false;
+          this.mediaRecorder = null;
+          this.audioChunks = [];
+          this.currentConversationId = null;
+          this.token = null;
+
+          this.initializeElements();
+          this.initializeEventListeners();
+          this.addLog("🔧 Système initialisé", "info");
+        }
+
+        initializeElements() {
+          // Boutons et inputs
+          this.connectBtn = document.getElementById("connect-btn");
+          this.tokenInput = document.getElementById("token-input");
+          this.statusIndicator = document.getElementById("status-indicator");
+          this.statusText = document.getElementById("status");
+
+          this.joinConversationBtn = document.getElementById(
+            "join-conversation-btn"
+          );
+          this.conversationInput = document.getElementById("conversation-id");
+
+          this.startRecordBtn = document.getElementById("start-record-btn");
+          this.stopRecordBtn = document.getElementById("stop-record-btn");
+          this.recordingStatus = document.getElementById("recording-status");
+          this.audioPreview = document.getElementById("audio-preview");
+          this.previewPlayer = document.getElementById("preview-player");
+          this.sendAudioBtn = document.getElementById("send-audio-btn");
+          this.cancelAudioBtn = document.getElementById("cancel-audio-btn");
+
+          this.messagesContainer =
+            document.getElementById("messages-container");
+          this.logsContainer = document.getElementById("logs-container");
+          this.clearLogsBtn = document.getElementById("clear-logs-btn");
+
+          // Sections
+          this.loginSection = document.getElementById("login-section");
+          this.conversationSection = document.getElementById(
+            "conversation-section"
+          );
+          this.audioSection = document.getElementById("audio-section");
+          this.messagesSection = document.getElementById("messages-section");
+        }
+
+        initializeEventListeners() {
+          this.connectBtn.addEventListener("click", () =>
+            this.connectToSocket()
+          );
+          this.joinConversationBtn.addEventListener("click", () =>
+            this.joinConversation()
+          );
+
+          this.startRecordBtn.addEventListener("click", () =>
+            this.startRecording()
+          );
+          this.stopRecordBtn.addEventListener("click", () =>
+            this.stopRecording()
+          );
+          this.sendAudioBtn.addEventListener("click", () =>
+            this.sendAudioMessage()
+          );
+          this.cancelAudioBtn.addEventListener("click", () =>
+            this.cancelRecording()
+          );
+
+          this.clearLogsBtn.addEventListener("click", () => this.clearLogs());
+
+          // Gestionnaire pour les drops de fichiers audio (optionnel)
+          document.addEventListener("drop", (e) => this.handleFileDrop(e));
+          document.addEventListener("dragover", (e) => e.preventDefault());
+        }
+
+        async connectToSocket() {
+          this.token = this.tokenInput.value.trim();
+
+          if (!this.token) {
+            this.addLog("❌ Token manquant", "error");
+            return;
+          }
+
+          this.updateConnectionStatus("connecting", "Connexion...");
+
+          try {
+            // Connexion Socket.io
+            this.socket = io("http://localhost:5000", {
+              auth: {
+                token: this.token,
+              },
+            });
+
+            this.setupSocketListeners();
+          } catch (error) {
+            this.addLog(`❌ Erreur connexion: ${error.message}`, "error");
+            this.updateConnectionStatus("offline", "Erreur");
+          }
+        }
+
+        setupSocketListeners() {
+          // Événements de connexion
+          this.socket.on("connect", () => {
+            this.addLog("✅ Connecté au serveur WebSocket", "success");
+            this.updateConnectionStatus("online", "Connecté");
+            this.showSection(this.conversationSection);
+          });
+
+          this.socket.on("disconnect", (reason) => {
+            this.addLog(`🔌 Déconnecté: ${reason}`, "warn");
+            this.updateConnectionStatus("offline", "Déconnecté");
+          });
+
+          this.socket.on("connect_error", (error) => {
+            this.addLog(`❌ Erreur connexion: ${error.message}`, "error");
+            this.updateConnectionStatus("offline", "Erreur");
+          });
+
+          // Événements audio en temps réel
+          this.socket.on("user_recording_audio", (data) => {
+            this.addLog(`🎤 ${data.userName} commence à enregistrer`, "info");
+            this.showUserRecording(data.userId, data.userName);
+          });
+
+          this.socket.on("user_stopped_recording", (data) => {
+            this.addLog(`⏹️ ${data.userId} a arrêté d'enregistrer`, "info");
+            this.hideUserRecording(data.userId);
+          });
+
+          this.socket.on("new_audio_message", (data) => {
+            this.addLog(`🔊 Nouveau message audio reçu`, "success");
+            this.displayAudioMessage(data.message);
+          });
+
+          this.socket.on("audio_message_status", (data) => {
+            this.addLog(
+              `📊 Statut audio: ${data.messageId} - ${data.status}`,
+              "info"
+            );
+          });
+
+          // Événements généraux
+          this.socket.on("pong", (data) => {
+            this.addLog(`🏓 Pong reçu: ${data.message}`, "info");
+          });
+
+          this.socket.on("error", (data) => {
+            this.addLog(`💥 Erreur Socket: ${data.message}`, "error");
+          });
+        }
+
+        joinConversation() {
+          const conversationId = this.conversationInput.value.trim();
+
+          if (!conversationId) {
+            this.addLog("❌ ID de conversation manquant", "error");
+            return;
+          }
+
+          this.currentConversationId = conversationId;
+
+          this.socket.emit("join_conversation", conversationId);
+          this.socket.emit("join_notifications");
+
+          this.addLog(
+            `📱 Rejoint la conversation: ${conversationId}`,
+            "success"
+          );
+
+          this.showSection(this.audioSection);
+          this.showSection(this.messagesSection);
+
+          // Charger l'historique des messages
+          this.socket.emit("get_conversation_history", { conversationId });
+
+          this.socket.on("conversation_history", (data) => {
+            if (data.success) {
+              this.addLog(
+                `📜 Historique chargé: ${data.messages.length} messages`,
+                "success"
+              );
+              data.messages.forEach((message) => this.displayMessage(message));
+            }
+          });
+        }
+
+        async startRecording() {
+          if (this.isRecording) return;
+
+          try {
+            this.addLog("🎤 Démarrage enregistrement...", "info");
+
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                sampleRate: 44100,
+              },
+            });
+
+            this.mediaRecorder = new MediaRecorder(stream, {
+              mimeType: "audio/webm;codecs=opus",
+            });
+
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+              if (event.data.size > 0) {
+                this.audioChunks.push(event.data);
+              }
+            };
+
+            this.mediaRecorder.onstop = () => {
+              this.finalizeRecording();
+            };
+
+            this.mediaRecorder.start(1000); // Collecte des données chaque seconde
+            this.isRecording = true;
+
+            // UI updates
+            this.startRecordBtn.classList.add("hidden");
+            this.stopRecordBtn.classList.remove("hidden");
+            this.recordingStatus.classList.remove("hidden");
+
+            // Notifier les autres utilisateurs
+            if (this.currentConversationId) {
+              this.socket.emit("audio_stream_start", {
+                conversationId: this.currentConversationId,
+                userId: this.getUserIdFromToken(),
+              });
+            }
+
+            this.addLog("🔴 Enregistrement démarré", "success");
+          } catch (error) {
+            this.addLog(
+              `❌ Erreur accès microphone: ${error.message}`,
+              "error"
+            );
+          }
+        }
+
+        stopRecording() {
+          if (!this.isRecording || !this.mediaRecorder) return;
+
+          this.mediaRecorder.stop();
+          this.isRecording = false;
+
+          // Arrêter tous les tracks du stream
+          this.mediaRecorder.stream
+            .getTracks()
+            .forEach((track) => track.stop());
+
+          // UI updates
+          this.stopRecordBtn.classList.add("hidden");
+          this.recordingStatus.classList.add("hidden");
+
+          // Notifier les autres utilisateurs
+          if (this.currentConversationId) {
+            this.socket.emit("audio_stream_stop", {
+              conversationId: this.currentConversationId,
+              userId: this.getUserIdFromToken(),
+            });
+          }
+
+          this.addLog("⏹️ Enregistrement arrêté", "info");
+        }
+
+        finalizeRecording() {
+          const audioBlob = new Blob(this.audioChunks, { type: "audio/webm" });
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          this.previewPlayer.src = audioUrl;
+          this.audioPreview.classList.remove("hidden");
+
+          this.addLog("✅ Enregistrement finalisé - Prêt à envoyer", "success");
+        }
+
+        async sendAudioMessage() {
+          if (!this.currentConversationId) {
+            this.addLog("❌ Aucune conversation sélectionnée", "error");
+            return;
+          }
+
+          const audioBlob = new Blob(this.audioChunks, { type: "audio/webm" });
+
+          try {
+            this.addLog("📤 Envoi du message audio...", "info");
+
+            const formData = new FormData();
+            formData.append("audio", audioBlob, "message_audio.webm");
+            formData.append("conversationId", this.currentConversationId);
+
+            const response = await fetch(
+              "http://localhost:5000/api/messages/audio/send",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${this.token}`,
+                },
+                body: formData,
+              }
+            );
+
+            const result = await response.json();
+
+            if (response.ok) {
+              this.addLog("✅ Message audio envoyé avec succès", "success");
+              this.audioPreview.classList.add("hidden");
+              this.startRecordBtn.classList.remove("hidden");
+
+              // Le message sera affiché via le WebSocket new_audio_message
+            } else {
+              throw new Error(result.message || "Erreur lors de l'envoi");
+            }
+          } catch (error) {
+            this.addLog(`❌ Erreur envoi audio: ${error.message}`, "error");
+          }
+        }
+
+        cancelRecording() {
+          this.audioPreview.classList.add("hidden");
+          this.startRecordBtn.classList.remove("hidden");
+          this.audioChunks = [];
+
+          if (this.previewPlayer.src) {
+            URL.revokeObjectURL(this.previewPlayer.src);
+            this.previewPlayer.src = "";
+          }
+
+          this.addLog("❌ Enregistrement annulé", "warn");
+        }
+
+        displayAudioMessage(message) {
+          const messageElement = document.createElement("div");
+          messageElement.className = "message audio";
+
+          messageElement.innerHTML = `
+                    <div class="message-header">
+                        <span>${
+                          message.Id_sender?.username || "Utilisateur"
+                        }</span>
+                        <span>${new Date(
+                          message.timestamp || message.time
+                        ).toLocaleTimeString()}</span>
+                    </div>
+                    <audio class="audio-player" controls>
+                        <source src="${message.audioUrl}" type="audio/mpeg">
+                        Votre navigateur ne supporte pas l'élément audio.
+                    </audio>
+                    <div class="message-info">
+                        <small>Durée: ${this.formatDuration(
+                          message.audioDuration
+                        )} • Taille: ${this.formatFileSize(
+            message.fileSize
+          )}</small>
+                    </div>
+                `;
+
+          this.messagesContainer.appendChild(messageElement);
+          this.messagesContainer.scrollTop =
+            this.messagesContainer.scrollHeight;
+
+          // Événement de lecture
+          const audioElement = messageElement.querySelector("audio");
+          audioElement.addEventListener("play", () => {
+            this.socket.emit("audio_message_played", {
+              messageId: message._id,
+              userId: this.getUserIdFromToken(),
+              conversationId: this.currentConversationId,
+            });
+          });
+        }
+
+        displayMessage(message) {
+          // Pour les messages texte existants
+          if (message.typeMessage !== "audio") return;
+
+          this.displayAudioMessage(message);
+        }
+
+        showUserRecording(userId, userName) {
+          // Afficher un indicateur visuel qu'un utilisateur enregistre
+          const recordingIndicator = document.createElement("div");
+          recordingIndicator.id = `recording-${userId}`;
+          recordingIndicator.className = "user-recording";
+          recordingIndicator.innerHTML = `
+                    <div class="pulse"></div>
+                    <span>${userName} enregistre un message...</span>
+                `;
+          recordingIndicator.style.cssText = `
+                    background: #fff3cd;
+                    border: 1px solid #ffeaa7;
+                    padding: 10px;
+                    margin: 5px 0;
+                    border-radius: 5px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                `;
+
+          this.messagesContainer.appendChild(recordingIndicator);
+        }
+
+        hideUserRecording(userId) {
+          const indicator = document.getElementById(`recording-${userId}`);
+          if (indicator) {
+            indicator.remove();
+          }
+        }
+
+        // Utilitaires
+        updateConnectionStatus(status, text) {
+          this.statusText.textContent = text;
+          this.statusIndicator.className = `status-indicator status-${status}`;
+        }
+
+        showSection(section) {
+          section.classList.remove("hidden");
+        }
+
+        hideSection(section) {
+          section.classList.add("hidden");
+        }
+
+        addLog(message, type = "info") {
+          const logEntry = document.createElement("div");
+          logEntry.className = `log-entry log-${type}`;
+          logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+
+          this.logsContainer.appendChild(logEntry);
+          this.logsContainer.scrollTop = this.logsContainer.scrollHeight;
+        }
+
+        clearLogs() {
+          this.logsContainer.innerHTML = "";
+        }
+
+        getUserIdFromToken() {
+          if (!this.token) return null;
+          try {
+            const payload = JSON.parse(atob(this.token.split(".")[1]));
+            return payload.id;
+          } catch {
+            return null;
+          }
+        }
+
+        formatDuration(seconds) {
+          if (!seconds) return "0:00";
+          const mins = Math.floor(seconds / 60);
+          const secs = Math.floor(seconds % 60);
+          return `${mins}:${secs.toString().padStart(2, "0")}`;
+        }
+
+        formatFileSize(bytes) {
+          if (!bytes) return "0 B";
+          const sizes = ["B", "KB", "MB", "GB"];
+          const i = Math.floor(Math.log(bytes) / Math.log(1024));
+          return (
+            Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i]
+          );
+        }
+
+        handleFileDrop(e) {
+          e.preventDefault();
+          const files = e.dataTransfer.files;
+          if (files.length > 0 && files[0].type.startsWith("audio/")) {
+            this.addLog(`📁 Fichier audio déposé: ${files[0].name}`, "info");
+            // Implémenter l'upload de fichier audio si nécessaire
+          }
+        }
+      }
+
+      // Initialisation de l'application
+      document.addEventListener("DOMContentLoaded", () => {
+        new AudioChatTester();
+      });
+    </script>
+  </body>
+</html>

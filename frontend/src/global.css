@@ -1,0 +1,59 @@
+
+/* === Import de la police === */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* === Import Tailwind v4 === */
+@import "tailwindcss/theme";
+
+/* === Définition du thème === */
+@theme {
+  
+ --color-myYellow: #F9EE34;
+ --color-myYellow2:#FFECA2;
+ --color-myGray : #F5F5F578;
+ --color-myBlack : #1C1C1C;        
+ --color-myGray2: #999999;
+ --color-myWhite: #FFFFFF;
+ --color-myGray3 : #dfdedd;
+ --color-myGray4:#EAEAEA;
+ /*dark*/
+  --color-mydarkYellow: #F9EE34;       /* Tu peux garder la même couleur primaire */
+  --color-mydrakGray: #33333388;       /* Exemple pour gris clair → sombre */
+  --color-mydarkBlack: #DFDEDD;        /* Inverse de ton noir pour contraste */
+  --color-mydarkGray2: #BBBBBB;        /* Gris secondaire plus clair pour dark mode */
+  --color-mydarkWhite: #1C1C1C;        /* Blanc devient noir pour dark mode */
+  --color-mydarkGray3: #2C2C2C;        /* Gris neutre sombre */
+
+
+  
+}
+
+
+/* ===== Scrollbar custom pour la liste des conversations ===== */
+.conv-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-myYellow);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+   min-height: 10px;
+    width: 50px;  
+}
+
+.conv-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-myYellow2);
+}
+
+.conv-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-myYellow) transparent;
+}
+
+
+
+/* === Styles globaux personnalisés === */
+:root {
+  --font-sans: 'Poppins', sans-serif;
+  font-family: var(--font-sans);
+
+}
+

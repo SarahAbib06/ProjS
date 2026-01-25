@@ -1,0 +1,289 @@
+{
+  "login": {
+    "welcome": "Bienvenue à nouveau",
+    "subtitle": "Vos messages vous attendent",
+    "emailPlaceholder": "exemple@gmail.com",
+    "passwordPlaceholder": "Mot de passe",
+    "acceptTerms": "J’accepte les conditions générales",
+    "connect": "Connecter",
+    "forgotPassword": "Mot de passe oublié ?",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "register": "S’inscrire"
+  },
+  
+  "register": {
+    "createAccount": "Créez votre compte",
+    "subtitle": "Faites partie de la révolution",
+    "username": "Nom d'utilisateur",
+    "email": "exemple@gmail.com",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmez votre mot de passe",
+    "acceptTerms": "J’accepte les conditions générales",
+    "signUp": "S’inscrire",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "login": "Se connecter"
+  },
+  "formCard": {
+    "leftText1": "Chaque conversation prend son envol",
+    "leftText2": "Connectez-vous instantanément avec vos proches, partagez vos moments et restez toujours en contact."
+  },
+  "otp": {
+  "title": "Vérifier votre code OTP",
+  "description": "Nous avons envoyé un code de vérification à 6 chiffres à votre adresse e-mail.",
+  "code": "Code OTP",
+  "verify": "Vérifier et continuer"
+},
+"chat": {
+    "today": "Aujourd’hui",
+    "yesterday": "Hier",
+    "online": "En ligne",
+    "inputPlaceholder": "Entrer un message...",
+    "reactions": "Réactions",
+    "close": "Fermer",
+     "searchButton": "Rechercher",
+    "searchPlaceholder": "Tapez pour rechercher..."
+
+  },
+   "messages": {
+    "searchFriends": "Rechercher dans vos amis..."
+  },
+  
+  "sidebar": {
+    "Owly": "Owly",
+    "Message": "Message",
+    "Groupe": "Groupe",
+    "Owly AI": "Owly IA",
+    "Paramètres": "Paramètres",
+
+    "Profile": "Profil",
+     "Jeux":"Jeux"
+
+  },
+  "welcome": {
+    "title": "Bienvenue sur Owly",
+    "description": "Sélectionnez une conversation dans la liste à gauche pour commencer à échanger. Vous pouvez également démarrer un nouveau chat ou créer un groupe en quelques clics.",
+    "encrypted": "Vos messages personnels sont chiffrés de bout en bout."
+  },
+
+  "profile":{
+  "profile": "Profil",
+  "personalInfo": "Informations personnelles",
+  "personalInfoDesc": "Gérez les informations de base de votre profil",
+  "edit": "Modifier",
+  "cancel": "Annuler",
+  "save": "Enregistrer",
+  "changePhoto": "Changer photo",
+  "deleteAccount": "Supprimer le compte",
+  "username": "Nom d'utilisateur",
+  "email": "E-mail"
+},
+"parametresMenu": {
+
+    "Title": "Paramètres",
+    "General": "Général",
+    "Confidentialite": "Confidentialité",
+    "Notifications": "Notifications",
+    "Aide": "Aide & support",
+    "Deconnexion": "Se déconnecter"
+  },
+
+
+
+  "forgotPassword": {
+    "title": "Mot de passe oublié ?",
+    "emailDescription": "Entrez votre email pour recevoir un code de vérification",
+    "otpTitle": "Code de vérification",
+    "otpSentTo": "Entrez le code envoyé à",
+    "newPasswordTitle": "Nouveau mot de passe",
+    "newPasswordDescription": "Créez votre nouveau mot de passe",
+    "newPasswordPlaceholder": "Nouveau mot de passe",
+    "confirmPasswordPlaceholder": "Confirmer le mot de passe",
+    "cancel": "Annuler",
+    "send": "Envoyer",
+    "sending": "Envoi...",
+    "back": "Retour",
+    "verify": "Vérifier",
+    "verifying": "Vérification...",
+    "reset": "Réinitialiser",
+    "resetting": "Réinitialisation...",
+    "success": "Mot de passe réinitialisé avec succès !",
+    "errors": {
+      "emailRequired": "Veuillez entrer votre email",
+      "sendOtpError": "Erreur lors de l'envoi de l'OTP",
+      "serverError": "Erreur de connexion au serveur",
+      "otpIncomplete": "Veuillez entrer le code OTP complet",
+      "otpInvalid": "Code OTP invalide",
+      "fieldsRequired": "Veuillez remplir tous les champs",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "resetError": "Erreur lors de la réinitialisation"
+    }
+  },
+
+
+   "parametresGeneral": {
+    "Title": "Général",
+    "Description": "Personnalisez l'apparence et la langue de l'application",
+    "Language": "Langue",
+    "Theme": "Thème",
+
+    "English": "Anglais",
+    "French": "Français",
+    "LightMode": "Mode clair",
+    "DarkMode": "Mode sombre"
+    
+  },
+
+  "parametresConfidentialite": {
+    "Title": "Confidentialité",
+    "Description": "Gérez vos paramètres de confidentialité et vos données",
+    "LastLogin": "Dernière connexion",
+    "Status": "Statut",
+    "BlockedUsers": "Utilisateurs bloqués",
+    "BlockedUsersCount": "utilisateur(s) bloqué(s)",
+    "ChangePassword": "Modifier le mot de passe",
+    "ChangePasswordDesc": "Changer votre mot de passe actuel"
+  },
+  "derniereConnexion": {
+    "Title": "Dernière connexion",
+    "Description": "Consultez vos dernières connexions à votre compte",
+    "Everyone": "Tout le monde",
+    "NoOne": "Personne"
+  },
+  "statut": {
+    "Title": "Statut",
+    "Description": "Gérez votre statut de visibilité",
+    "Everyone": "Tout le monde",
+    "NoOne": "Personne"
+  },
+
+  "privacy": {
+    "BlockedUsersTitle": "Utilisateurs bloqués",
+    "NoBlockedUsers": "Aucun utilisateur bloqué",
+    "BlockedUsersDescription": "Les utilisateurs bloqués ne pourront plus vous appeler ni vous envoyer de messages.",
+    "Unblock": "Débloquer",
+    "UnblockConfirmTitle": "Débloquer cet utilisateur ?",
+   "UnblockConfirmText": "{{username}} pourra désormais vous envoyer une demande de messages. Cette personne ne sera pas informée que vous l'avez débloquée.",
+  "Cancel": "Annuler",
+  "Confirm": "Débloquer"
+  },
+
+  
+  
+  "modifierMotDePasse": {
+    "titre": "Modifier le mot de passe",
+    "sousTitre": "Changer votre mot de passe actuel",
+    "motDePasseActuel": "Mot de passe actuel",
+    "nouveauMotDePasse": "Nouveau mot de passe",
+    "confirmerMotDePasse": "Confirmer votre mot de passe",
+    "enregistrer": "Enregistrer"
+  },
+  
+
+  "infoContactModal": {
+    "mediaDocuments": "Médias, documents",
+    "themes": "Thèmes",
+    "addToFavorites": "Ajouter aux favoris",
+    "archiveConversation": "Archiver la conversation",
+    "lockConversation": "Verrouiller la conversation",
+    "block": "Bloquer",
+    "deleteConversation": "Supprimer la discussion"
+  },
+  
+  "chatOptions": {
+    "infoOn": "Infos sur",
+    "addToFavorites": "Ajouter aux favoris",
+    "archiveConversation": "Archiver la conversation",
+    "lockConversation": "Verrouiller la conversation",
+    "block": "Bloquer",
+    "deleteConversation": "Supprimer la discussion"
+
+  },"themeSelector": {
+    "simpleColors": "Couleurs simples",
+    "gradients": "Dégradés",
+    "chooseImage": "Choisir une image",
+    "removeTheme": "Retirer le thème",
+    "close": "Fermer",
+    "interactive": "Interactif léger",
+    "auto": "Jour/Nuit",
+    "seasonal" :"saisons"
+  },
+  "colors": {
+    "Jaune": "Jaune",
+    "Bleu": "Bleu",
+    "Vert": "Vert",
+    "Rose": "Rose",
+    "Rouge": "Rouge",
+    "Violet": "Violet",
+    "Orange": "Orange",
+    "Turquoise": "Turquoise",
+    "Gris": "Gris",
+    "Beige": "Beige",
+    "Soleil Doux": "Soleil Doux",
+    "Blanc": "Blanc"
+  },
+  "gradients": {
+    "Bleu → Rose": "Bleu → Rose",
+    "Violet → Bleu": "Violet → Bleu",
+    "Orange → Rouge": "Orange → Rouge",
+    "Bleu → Turquoise": "Bleu → Turquoise",
+    "Rose → Violet": "Rose → Violet",
+    "Jaune → Orange": "Jaune → Orange",
+    "Vert → Bleu": "Vert → Bleu",
+    "Rouge → Violet": "Rouge → Violet",
+    "Gris → Noir": "Gris → Noir",
+    "Bleu Lavande": "Bleu Lavande",
+    "Pêche → Rose": "Pêche → Rose",
+    "Arc-en-ciel doux": "Arc-en-ciel doux"
+  },
+  "parametresNotifications": {
+  "Title": "Notifications",
+  "Description": "Contrôlez vos préférences de notifications.",
+  
+  "Banner": "Afficher la bannière de notifications",
+  "BannerDesc": "Toujours",
+
+  "Messages": "Notifications des messages",
+  "MessagesDesc": "Afficher les notifications pour les nouveaux messages",
+
+  "Calls": "Notifications d'appels",
+  "CallsDesc": "Afficher les notifications pour les appels entrants",
+
+  "IncomingSound": "Appels entrants",
+  "IncomingSoundDesc": "Émettre un son pour les appels entrants"
+},
+  "banniereNotifications": {
+    "Title": "Bannière de notification",
+    "Description": "Sélectionnez quand les bannières doivent apparaître.",
+    "Never": "Jamais",
+    "Always": "Toujours",
+    "OnlyOpen": "Uniquement lorsque l'application est ouverte"
+  },
+  
+
+"gamesPage": {
+    "choose_game": "Choisis ton jeu",
+    "back": "Retour",
+    "owly_quiz": "Owly Quiz",
+    "rock_paper_scissors": "Pierre Papier Ciseaux",
+    "memory_game": "Jeu de Mémoire",
+    "tictac":"Devine le nombre"
+  },
+
+
+  
+  "Media":{
+    "title":"Medias,documents",
+    "medias":"Medias",
+    "documents":"Documents",
+    "nomedia":"Aucun Medias",
+    "nodocuments":"Aucun document"
+  }
+ 
+  
+}
+
+
+
+
+
