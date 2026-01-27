@@ -8,6 +8,12 @@ export const conversationService = {
     return response.data;
   },
 
+   // Supprimer définitivement une conversation
+  deleteConversation: async (conversationId) => {
+    const response = await api.delete(`/conversations/${conversationId}`);
+    return response.data;
+  },
+
   // Récupérer une conversation spécifique
   getConversation: async (conversationId) => {
     const response = await api.get(`/conversations/${conversationId}`);
@@ -57,5 +63,12 @@ export const conversationService = {
   getArchivedConversations: async (userId) => {
     const response = await api.get(`/archive/user/${userId}`);
     return response.data;
-  }
+  },
+  // frontend/src/services/conversationService.js
+
+deleteConversationForMe: async (conversationId) => {
+  const response = await api.delete(`/conversations/${conversationId}`);
+  return response.data;
+},
+
 };

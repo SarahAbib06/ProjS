@@ -15,7 +15,7 @@ export default function AudioMessage({ src }) {
       <audio
         src={src}
         controls
-        className="flex-1"
+        className="flex-1 "
         onLoadedMetadata={(e) => {
           setDuration(e.target.duration); // durée totale en secondes
         }}

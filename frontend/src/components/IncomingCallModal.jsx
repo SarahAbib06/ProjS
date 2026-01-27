@@ -56,12 +56,16 @@ export default function IncomingCallModal() {
           <div className="text-center text-white">
             {/* Avatar/Image */}
             <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/20 flex items-center justify-center">
-              <Video size={40} className="text-white" />
+              {incomingCall.callType === 'audio' ? (
+                <Phone size={40} className="text-white" />
+              ) : (
+                <Video size={40} className="text-white" />
+              )}
             </div>
 
             {/* Informations */}
             <h2 className="text-2xl font-bold mb-2">
-              Appel vidéo entrant
+              {incomingCall.callType === 'audio' ? "Appel vocal entrant" : "Appel vidéo entrant"}
             </h2>
             <p className="text-lg mb-1">
               <strong>{incomingCall.fromUsername || "Utilisateur"}</strong>

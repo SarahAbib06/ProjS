@@ -1,6 +1,7 @@
 
 
 
+
 export default function ConversationItem({
   avatar,
   name,
@@ -55,15 +56,31 @@ export default function ConversationItem({
               {name}
             </h4>
 
-            <span className="text-[10px] md:text-[11px] text-gray-500 ml-2 md:ml-3">
-              {time}
-            </span>
+<span
+  className={`
+    text-[10px] md:text-[11px] ml-2 md:ml-3
+    ${selected
+      ? "text-myBlack dark:text-myBlack"
+      : "text-gray-500 dark:text-white"
+    }
+  `}
+>
+  {time}
+</span>
           </div>
 
           <div className="flex items-center justify-between gap-1 md:gap-1.5 mt-0.5 md:mt-1">
-            <p className="text-[10px] md:text-[11px] text-myGray2 truncate">
-              {lastMessage}
-            </p>
+<p
+  className={`
+    text-[10px] md:text-[11px] truncate
+    ${selected
+      ? "text-myBlack dark:text-myBlack"
+      : "text-myGray2 dark:text-white"
+    }
+  `}
+>
+  {lastMessage}
+</p>
 
             {unread > 0 && (
               <span

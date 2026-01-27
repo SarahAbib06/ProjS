@@ -6,7 +6,8 @@ import clickSound from "../assets/sounds/click.wav";
 import winSound from "../assets/sounds/win.wav";
 import loseSound from "../assets/sounds/lose.wav";
 import drawSound from "../assets/sounds/draw.wav";
-
+import { IoArrowBackOutline } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 // 🔊 Jouer un son
 function playSound(file) {
   const audio = new Audio(file);
@@ -31,6 +32,7 @@ function smartBot(player) {
 }
 
 export default function RockPaper() {
+  const { t } = useTranslation();
   const [playerChoice, setPlayerChoice] = useState(null);
   const [botChoice, setBotChoice] = useState(null);
   const [result, setResult] = useState(null);
@@ -118,16 +120,29 @@ export default function RockPaper() {
       bg-gradient-to-br from-gray-900 via-black to-gray-900
       ${shake ? "animate-[shake_0.2s_ease-in-out_3]" : ""}`}
     >
-      {/* Bouton retour */}
-      <button
-        onClick={() => (window.location.href = "/games")}
-        className="absolute top-4 left-4 flex items-center gap-2 px-3 py-2
-        bg-white/10 border border-white/20 backdrop-blur-md
-        rounded-xl text-white text-sm sm:text-base hover:bg-white/20
-        transition shadow-lg z-50"
-      >
-        <ArrowLeft size={18} /> Retour
-      </button>
+     
+
+<button
+  onClick={() => (window.location.href = "/games")}
+  className="
+    p-3
+    bg-black text-yellow-400
+    rounded-full
+    shadow-lg
+    hover:bg-gray-800 hover:text-yellow-300
+    transition
+    flex items-center justify-center
+    cursor-pointer
+    fixed
+    left-25 
+     -top-0 md:top-2 
+    
+     
+    z-50
+  "
+>
+  <IoArrowBackOutline className="text-2xl sm:text-3xl" />
+</button>
 
       {/* Particles */}
       {particles.map((p) => (
@@ -144,16 +159,16 @@ export default function RockPaper() {
       <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 flex items-center gap-3 text-center">
         <Sparkles className="text-yellow-300" />
         <span className="bg-gradient-to-r from-pink-400 to-blue-400 text-transparent bg-clip-text">
-          Rock Paper Scissors
+           {t("rockPaper.title")}
         </span>
       </h1>
 
       <div className="flex flex-col sm:flex-row gap-6 sm:gap-10 text-2xl mb-6">
         <div className="flex items-center gap-2 justify-center">
-          <Crown className="text-yellow-300" /> {score.player}
+          <Crown className="text-yellow-300" /> {t("rockPaper.player")}: {score.player}
         </div>
         <div className="flex items-center gap-2 justify-center">
-          <Skull className="text-red-400" /> {score.bot}
+          <Skull className="text-red-400" /> {t("rockPaper.bot")}: {score.bot}
         </div>
       </div>
 
@@ -203,7 +218,7 @@ export default function RockPaper() {
                   : "text-yellow-300"
               }
             >
-              {resultEmoji[result]} {resultText[result]}
+              {resultEmoji[result]} {t(`rockPaper.result.${result}`)}
             </span>
           </motion.div>
         )}

@@ -8,4 +8,31 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+    server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+  },
+  define: {
+    global: 'globalThis',
+    'process.env': {}
+  },
+  resolve: {
+    alias: {
+      global: 'globalThis',
+    }
+  },
+  optimizeDeps: {
+    include: ['simple-peer'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+      plugins: [],
+    },
+  },
 })

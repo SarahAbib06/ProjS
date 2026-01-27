@@ -42,7 +42,7 @@ const Welcome = () => {
         }}
         transition={{ 
           type: "spring", 
-          stiffness: 50, 
+          stiffness: 30, 
           damping: 12,
           duration: 1.2 
         }}
@@ -66,7 +66,7 @@ const Welcome = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{
               delay: 1 + index * 0.03,
-              duration: 0.1
+              duration: 0.8
             }}
           >
             {char}
@@ -82,7 +82,7 @@ const Welcome = () => {
         transition={{ 
           delay: 2.2,
           type: "spring",
-          stiffness: 100,
+          stiffness: 60,
           damping: 15
         }}
         whileHover={{ scale: 1.05 }}

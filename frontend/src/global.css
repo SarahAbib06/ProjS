@@ -4,6 +4,7 @@
 
 /* === Import Tailwind v4 === */
 @import "tailwindcss/theme";
+@import "tw-animate-css";
 
 /* === Définition du thème === */
 @theme {
@@ -57,3 +58,47 @@
 
 }
 
+
+
+/* ===== Scrollbar globale ===== */
+
+/* Chrome, Edge, Safari */
+html::-webkit-scrollbar {
+  width: 10px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 🌞 LIGHT MODE */
+html::-webkit-scrollbar-thumb {
+  background: var(--color-myBlack);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Hover light */
+html::-webkit-scrollbar-thumb:hover {
+  background: #000000;
+}
+
+/* 🌙 DARK MODE */
+html.dark::-webkit-scrollbar-thumb {
+  background: var(--color-myYellow);
+}
+
+html.dark::-webkit-scrollbar-thumb:hover {
+  background: var(--color-myYellow2);
+}
+
+/* Firefox */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-myBlack) transparent;
+}
+
+html.dark {
+  scrollbar-color: var(--color-myYellow) transparent;
+}

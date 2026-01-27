@@ -10,16 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
     "@tailwindcss/vite": "^4.1.17",
-    "agora-rtc-react": "^2.5.1",
-    "agora-rtc-sdk-ng": "^4.24.2",
+    "@zegocloud/zego-uikit-prebuilt": "^2.17.2",
     "axios": "^1.13.2",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "emoji-picker-react": "^4.15.0",
+    "emoji-picker-react": "^4.17.1",
     "framer-motion": "^12.23.25",
     "i18next": "^25.6.1",
     "jsqr": "^1.4.0",
@@ -32,6 +32,7 @@
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.5",
     "react-toastify": "^11.0.5",
+    "simple-peer": "^9.11.1",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.4.0",
     "zustand": "^5.0.8"

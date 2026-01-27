@@ -17,12 +17,13 @@ export default function Profile({ setSelectedMenu }) {
   const [editMode, setEditMode] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
+const DEFAULT_PROFILE_PICTURE = "https://res.cloudinary.com/dv9oqjulh/image/upload/v1764324539/photo_de_profil_par_defaut_j3qm1p.png";
 
     const [isImageOpen, setIsImageOpen] = useState(false);
 const [showDeletePhotoModal, setShowDeletePhotoModal] = useState(false);
 const [errorMessage, setErrorMessage] = useState("");
 
-
+ // États originaux (données du serveur)
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [profilePicture, setProfilePicture] = useState("");
@@ -35,44 +36,81 @@ const [errorMessage, setErrorMessage] = useState("");
   const [_searchUrl, setSearchUrl] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
   const [loadingQR, setLoadingQR] = useState(false);
+  
 
+// États temporaires (pendant l'édition)
+const [tempName, setTempName] = useState("");
+const [tempFile, setTempFile] = useState(null);
+const [preview, setPreview] = useState(null);
+// Activer le mode édition
+  const handleEditMode = () => {
+    setEditMode(true);
+    setTempName(name);
+    setPreview(null);
+    setTempFile(null);
+    setErrorMessage("");
+  };
   //  Charger le profil à l'ouverture de la page
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const user = await profileService.getProfile();
-        setName(user.username);
-        setEmail(user.email);
-        setProfilePicture(user.profilePicture);
-        
-        // Générer automatiquement le QR code
-        await generateQRCode();
-      } catch (err) {
-        console.error("Erreur chargement profil :", err);
-      }
-    };
-
-    loadProfile();
-  }, []);
-
-  const [preview, setPreview] = useState(null);
-
-  const handlePhotoChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setPreview(URL.createObjectURL(file));
-
+ // Au chargement du profil
+useEffect(() => {
+  const loadProfile = async () => {
     try {
-      const user = await profileService.uploadProfilePicture(file);
-      console.log("UPLOAD RESULT ===>", user);
+      const user = await profileService.getProfile();
+      setName(user.username);
       setProfilePicture(user.profilePicture);
-    } catch (error) {
-      console.error(error);
-      alert("Erreur lors de l'enregistrement de la photo");
+      setTempName(user.username); // Initialiser les états temporaires
+      setEmail(user.email)
+      // ...
+    } catch (err) {
+      console.error("Erreur chargement profil :", err);
     }
   };
+  loadProfile();
+}, []);
 
+  // Gérer le changement de photo (SANS upload immédiat)
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setTempFile(file);
+    setPreview(URL.createObjectURL(file));
+  };
+  // Bouton ANNULER
+  const handleCancel = () => {
+    setEditMode(false);
+    setTempName(name);
+    setPreview(null);
+    setTempFile(null);
+    setErrorMessage("");
+  };
+
+  // Bouton ENREGISTRER
+  const handleUpdate = async () => {
+    setErrorMessage("");
+    
+    try {
+      // 1. Uploader la photo si elle a changé
+      if (tempFile) {
+        const user = await profileService.uploadProfilePicture(tempFile);
+        setProfilePicture(user.profilePicture);
+      }
+      
+      // 2. Mettre à jour le username si changé
+      if (tempName !== name) {
+        const updated = await profileService.updateUsername(tempName);
+        setName(updated.username);
+      }
+      
+      // 3. Réinitialiser
+      setEditMode(false);
+      setPreview(null);
+      setTempFile(null);
+      
+    } catch (error) {
+      setErrorMessage(error.message || "Une erreur est survenue lors de la mise à jour.");
+    }
+  };
 
   
 // supression du compte
@@ -96,7 +134,7 @@ const handleDeletePhoto = async () => {
     // Appel au backend pour supprimer la photo
 
     // Supprimer la photo côté front
-    setProfilePicture("");
+    setProfilePicture( DEFAULT_PROFILE_PICTURE);
     setPreview(null);
 
    
@@ -179,32 +217,76 @@ useEffect(() => {
 
 //message derreur 
   
-const handleUpdate = async () => {
-  setErrorMessage(""); // reset avant chaque update
-  try {
-    const updated = await profileService.updateUsername(name);
-    setName(updated.username);
-    setEditMode(false);
-  } catch (error) {
-    // si tu as throw { message: ... } côté service
-    setErrorMessage(error.message || "Une erreur est survenue lors de la mise à jour du username.");
-  }
-};
+
 
 return (
   <div className="bg-myGray4 dark:bg-neutral-900 p-6 rounded-2xl shadow-md lg:h-auto h-auto">
 
 
-      <div className="flex items-center gap-3 mb-6">
-        <FaArrowLeft
-          onClick={() => setSelectedMenu(null)}
-          className="w-5 h-5 text-myBlack dark:text-white cursor-pointer lg:hidden"
-        />
+<div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+  
+  {/* Left: Back + Title */}
+  <div className="flex items-center gap-3">
+    <FaArrowLeft
+      onClick={() => setSelectedMenu(null)}
+      className="w-5 h-5 cursor-pointer text-myBlack dark:text-white lg:hidden"
+    />
 
-        <h2 className="text-2xl font-semibold">
-          {t("profile.profile")}
-        </h2>
-      </div>
+    <h2 className="text-2xl font-semibold whitespace-nowrap">
+      {t("profile.profile")}
+    </h2>
+  </div>
+
+  {/* Right: Actions */}
+  {!editMode ? (
+    <button
+      onClick={handleEditMode}
+      className="
+        h-9
+        w-full md:w-auto
+        rounded-lg
+        bg-black
+        px-6
+        text-xs font-semibold text-white
+      "
+    >
+      {t("profile.edit")}
+    </button>
+  ) : (
+    <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row">
+      <button
+        onClick={handleCancel}
+        className="
+          h-9
+          w-full md:w-auto
+          rounded-lg
+          border border-myBlack
+          px-6
+          text-xs font-semibold
+          dark:bg-neutral-700
+        "
+      >
+        {t("profile.cancel")}
+      </button>
+
+      <button
+        onClick={handleUpdate}
+        className="
+          h-9
+          w-full md:w-auto
+          rounded-lg
+          bg-[#008C23]
+          px-6
+          text-xs font-semibold text-white
+          hover:bg-green-700
+          dark:bg-myYellow
+        "
+      >
+        {t("profile.save")}
+      </button>
+    </div>
+  )}
+</div>
 
 
       {/* IMAGE FULLSCREEN MODAL */}
@@ -259,8 +341,31 @@ return (
           </div>
 
           <div>
+            <div className="flex items-center gap-3">
             <p className="text-md">{name}</p>
-            <p className="text-gray-500 text-sm pt-1.5">{email}</p>
+            <button
+  onClick={async () => {
+    // Générer le QR code si pas encore fait
+    if (!qrCodeData && !loadingQR) {
+      await generateQRCode();
+    }
+    // Ouvrir la modal
+    if (qrCodeData) {
+      setShowQRModal(true);
+    }
+  }}
+  disabled={loadingQR}
+  className="flex items-center justify-center bg-black hover:bg-gray-800 text-white px-3 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+>
+  {loadingQR ? (
+    <div className="animate-spin rounded-full h-[18px] w-[18px] border-b-2 border-white"></div>
+  ) : (
+    <QrCode size={18} />
+  )}
+</button>
+               
+            </div>
+            <p className="text-gray-500 text-xs sm:text-sm pt-1.5">{email}</p>
           </div>
         </div>
 
@@ -305,31 +410,7 @@ return (
             </p>
           </div>
 
-          {!editMode ? (
-            <button
-              onClick={() => setEditMode(true)}
-              className="bg-black text-white text-xs font-semibold px-6 py-2.5 rounded-lg w-full md:w-auto h-9"
-            >
-              {t("profile.edit")}
-            </button>
-          ) : (
-            <div className="flex gap-3 flex-col md:flex-row w-full md:w-auto">
-              <button
-                onClick={() => setEditMode(false)}
-                className="border border-myBlack text-xs font-semibold dark:bg-neutral-700 px-6 py-2.5 rounded-lg h-9 w-full md:w-auto"
-              >
-                {t("profile.cancel")}
-              </button>
-
-              <button
-                onClick={handleUpdate}
-
-                className="bg-[#008C23] hover:bg-green-700 dark:bg-myYellow text-white text-xs font-semibold px-6 py-2.5 rounded-lg h-9 w-full md:w-auto"
-              >
-                {t("profile.save")}
-              </button>
-            </div>
-          )}
+ 
         </div>
 
 
@@ -342,8 +423,8 @@ return (
                 <FaUser className="text-gray-500 text-sm mr-2" />
                 <input
                   className="w-full py-2 text-xs bg-transparent focus:outline-none"
-                  value={name}
-                  onChange={(e) => {setName(e.target.value)
+                  value={tempName}
+                  onChange={(e) => {setTempName(e.target.value)
                     setErrorMessage("")
                   }}
                   
@@ -367,7 +448,7 @@ return (
                   className="w-full py-2 text-xs bg-transparent focus:outline-none"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={editMode}
+                  disabled={true}
                 />
               </div>
             </div>
@@ -377,136 +458,31 @@ return (
 
         {editMode && (  
           <div className="mt-6">
-            <button 
-              onClick={() => setShowDeleteModal(true)}
-              className="bg-[#EF0000] hover:bg-red-700 text-white text-xs font-semibold px-5 py-2 rounded-lg"
-            >
-
-              {t("profile.deleteAccount")}
-            </button>
           </div>
         )}
       </div>
 
 
-      {/* ▬▬▬ CARD 3 : QR CODE (MAINTENANT À L’INTÉRIEUR DU CONTAINER !) ▬▬▬ */}
-      <div
-        className="
-        bg-myGray4 dark:bg-neutral-800 
-        rounded-xl border-[1.2px] border-myBlack 
-        p-6 w-full mb-4
-      "
-      >
-        <div className="mb-6">
-          <h3 className="font-semibold text-lg flex items-center gap-2 mb-2">
-            <QrCode size={20} />
-            Votre QR Code Personnel
-          </h3>
-        </div>
-
-        {loadingQR ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#F9EE34]"></div>
-            <p className="text-gray-600 mt-3">Génération du QR code...</p>
-          </div>
-        ) : qrCodeData ? (
-          <div className="flex flex-col lg:flex-row items-center gap-8">
-
-            <div className="relative">
-              <div className="w-64 h-64 rounded-xl border-4 border-white shadow-xl bg-white p-4">
-                <img 
-                  src={qrCodeData} 
-                  alt="QR Code"
-                  className="w-full h-full"
-                />
-              </div>
-              <div className="absolute -top-3 -right-3 bg-[#F9EE34] text-black text-sm font-bold px-3 py-1 rounded-full shadow">
-                Owly
-              </div>
-            </div>
-
-            <div className="flex-1">
-              <div className="mb-6 text-center lg:text-left">
-                <p className="font-bold text-xl text-[#008C23] mb-2">{name}</p>
-                <p className="text-sm text-gray-600">
-                  Partagez ce QR code pour que vos contacts vous trouvent facilement
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={() => setShowQRModal(true)}
-                  className="flex items-center justify-center gap-3 bg-black hover:bg-gray-800 text-white px-6 py-3 rounded-lg flex-1"
-                >
-                  <QrCode size={20} />
-                  Agrandir
-                </button>
-
-                <button
-                  onClick={downloadQRCode}
-                  className="flex items-center justify-center gap-3 bg-[#F9EE34] hover:bg-yellow-500 text-black px-6 py-3 rounded-lg flex-1"
-                >
-                  <Download size={20} />
-                  Télécharger
-                </button>
-              </div>
-
-              <button
-                onClick={generateQRCode}
-                className="mt-4 text-sm text-blue-600 hover:text-blue-800 w-full text-center"
-              >
-                Regénérer le QR code
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center rounded-full bg-gray-100 dark:bg-neutral-700">
-              <QrCode size={40} className="text-gray-400" />
-            </div>
-            <p className="text-gray-600 mb-6">
-              Créez votre QR code personnel pour partager votre profil
-            </p>
-            <button
-              onClick={generateQRCode}
-              className="bg-[#F9EE34] hover:bg-yellow-500 text-black px-8 py-3 rounded-lg font-medium text-lg"
-            >
-              Générer mon QR Code
-            </button>
-          </div>
-        )}
-      </div>
-
+      
       {/* ==================== */}
       {/* MODAL QR CODE AGRANDI */}
       {/* ==================== */}
-      {showQRModal && qrCodeData && (
+      {showQRModal &&  (
         <div 
           className="fixed inset-0 bg-black/90 flex items-center justify-center z-[70] p-4"
           onClick={() => setShowQRModal(false)}
         >
           <div 
-            className="bg-white dark:bg-neutral-800 p-8 rounded-2xl max-w-md w-full text-center shadow-2xl"
+            className="bg-white dark:bg-neutral-800 p-6 sm:p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl "
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-2xl font-bold mb-4">Votre QR Code</h3>
+            <h3 className="text-xl sm:text-2xl font-bold mb-14 sm:mb-16">{t("profile.votreqrcode")}</h3>
 
             <div className="relative mb-6">
-              <div className="w-80 h-80 mx-auto rounded-xl border-8 border-white bg-white p-6 shadow-2xl">
-                <img 
-                  src={qrCodeData} 
-                  alt="QR Code"
-                  className="w-full h-full"
-                />
-              </div>
-
-              <div className="absolute -top-3 -right-3 bg-[#F9EE34] text-black font-bold px-4 py-1.5 rounded-full text-sm">
-                OWLY
-              </div>
-
+              {/* Photo de profil - moitié sur le carré blanc, moitié en haut */}
               {profilePicture && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                <div className="absolute -top-8 sm:-top-9 left-1/2 -translate-x-1/2 z-10">
+                  <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden border-4 border-white shadow-lg">
                     <img 
                       src={profilePicture} 
                       alt={name}
@@ -515,31 +491,45 @@ return (
                   </div>
                 </div>
               )}
+
+              <div className="w-full aspect-square max-w-[240px] sm:max-w-[260px] mx-auto rounded-xl border-8 border-white bg-white p-4 sm:p-5 shadow-2xl pt-10 sm:pt-11">
+                <img 
+                  src={qrCodeData} 
+                  alt="QR Code"
+                  className="w-full h-full"
+                />
+              </div>
+
+              <div className="absolute -top-3 -right-3 bg-[#F9EE34] text-black font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm shadow-md">
+                OWLY
+              </div>
             </div>
 
-            <div className="mb-8">
-              <p className="font-bold text-2xl text-[#008C23] mb-1">{name}</p>
+            <div className="mb-6">
+              <p className="font-bold text-xl sm:text-2xl text-myGray2">@{name}</p>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={downloadQRCode}
-                className="flex-1 bg-[#F9EE34] hover:bg-yellow-500 text-black py-4 rounded-lg font-bold text-lg flex items-center justify-center gap-3"
+                className="w-full sm:flex-1 bg-myYellow hover:bg-myYellow2 text-black py-3 rounded-lg font-bold text-base flex items-center justify-center gap-2 transition-colors"
               >
-                <Download size={22} />
-                Télécharger
+                <Download size={20} />
+                 {t("profile.Telecharger")}
               </button>
               <button
                 onClick={() => setShowQRModal(false)}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 dark:bg-neutral-700 py-4 rounded-lg font-medium"
+                className="w-full sm:flex-1 bg-myGray border-1 border-black hover:bg-gray-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 py-3 rounded-lg font-bold transition-colors"
               >
-                Fermer
+                {t("profile.Fermer")}
               </button>
+                 
             </div>
+           
+
           </div>
         </div>
       )}
-
       <DeleteAccountModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

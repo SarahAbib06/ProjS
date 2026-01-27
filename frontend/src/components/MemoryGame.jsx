@@ -5,6 +5,8 @@ import clickSound from "../assets/sounds/click.wav";
 import winSound from "../assets/sounds/win.wav";
 import loseSound from "../assets/sounds/lose.wav";
 import confetti from "canvas-confetti"; // npm install canvas-confetti
+import { IoArrowBackOutline } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 
 const EMOJIS = ["🐶","🐱","🦊","🐸","🐵","🦁","🐼","🦄"];
 
@@ -19,6 +21,7 @@ function playSound(sound) {
 }
 
 export default function MemoryGame() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [cards, setCards] = useState([]);
   const [flippedCards, setFlippedCards] = useState([]);
@@ -115,14 +118,14 @@ export default function MemoryGame() {
     clearInterval(timerRef.current);
     setGameOver(true);
     playSound(winSound);
-    setMessage("🎉 Niveau terminé !");
+    setMessage("WIN");
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
   };
 
   const loseGame = () => {
     setGameOver(true);
     playSound(loseSound);
-    setMessage("⏱ Temps écoulé ! Recommence depuis le niveau 1 !");
+    setMessage("LOSE");
     setLevel(1);
     setGameSpeed(20);
     setTimeout(() => initGame(true), 1500);
@@ -160,37 +163,59 @@ export default function MemoryGame() {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "20px", position: "relative", padding: "0 10px" }}>
-      <h2 style={timerStyle}>⏳ Temps restant: {timeLeft}s | Niveau: {level}</h2>
+   <div style={{ textAlign: "center", marginTop: "20px", position: "relative", padding: "10px" }}>
 
-      {/* Boutons de contrôle avec Retour */}
-      <div style={{ marginBottom: "15px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-        <button
-  onClick={() => navigate("/games")}
+      <button
+    onClick={() => navigate("/games")}
+    className="
+      p-3 
+      bg-black text-yellow-400 
+      rounded-full 
+      shadow-lg 
+      hover:bg-gray-800 hover:text-yellow-300 
+      transition 
+      flex items-center justify-center
+      cursor-pointer
+       fixed  top-1 left-25
+      fixed  md:top-2
+      z-50
+    "
+  >
+    <IoArrowBackOutline className="text-2xl sm:text-3xl" />
+  </button>
+     <h2 style={{ ...timerStyle, marginTop: "20px" }}>
+  ⏳  {t("memoryGame.timeLeft")}: {timeLeft}s | {t("memoryGame.level")}: {level}
+</h2>
+
+
+<style>
+{`
+  @media (max-width: 640px) {
+    h2 {
+      font-size: 1.2rem;
+    }
+  }
+`}
+</style>
+
+
+     
+      {/* Boutons de contrôle Start / Pause / Reset */}
+<div
   style={{
-    position: "absolute",
-    top: "20px",
-    left: "20px",
-    padding: "10px 20px",
-    borderRadius: 10,
-    background: "#555",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "700",
-    fontSize: 16,
-    color: "#fff",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
-    zIndex: 1000
+    display: "flex",
+    flexDirection: "row",       // horizontal sur desktop
+    flexWrap: "wrap",           // permet d’empiler sur mobile
+    gap: "8px",
+    justifyContent: "center",   // centré
+    marginBottom: "20px",
+    marginTop: "10px",
   }}
 >
-  ← Retour
-</button>
-
-
-        <button style={buttonStyle} onClick={() => setDisabled(false)}>▶ Start</button>
-        <button style={buttonStyle} onClick={() => setDisabled(true)}>⏸ Pause</button>
-        <button style={buttonStyle} onClick={() => initGame(true)}>🔄 Reset</button>
-      </div>
+  <button style={{ ...buttonStyle, padding: "5px 12px", fontSize: "0.85rem" }} onClick={() => setDisabled(false)}>▶ {t("memoryGame.start")}</button>
+  <button style={{ ...buttonStyle, padding: "5px 12px", fontSize: "0.85rem" }} onClick={() => setDisabled(true)}>⏸  {t("memoryGame.pause")}</button>
+  <button style={{ ...buttonStyle, padding: "5px 12px", fontSize: "0.85rem" }} onClick={() => initGame(true)}>🔄 {t("memoryGame.reset")}</button>
+</div>
 
       {/* Grille responsive */}
       <div className="grid-responsive">
@@ -230,12 +255,15 @@ export default function MemoryGame() {
           display: "flex", justifyContent: "center", alignItems: "center",
           backgroundColor: "rgba(0,0,0,0.6)", zIndex: 10, flexDirection: "column"
         }}>
-          <h2 style={{ color: "#fff", fontSize: "2rem", marginBottom: "20px" }}>{message}</h2>
+          <h2 style={{ color: "#fff", fontSize: "2rem", marginBottom: "20px" }}>
+  {message === "WIN" && t("memoryGame.levelCompleted")}
+  {message === "LOSE" && t("memoryGame.timeOver")}
+</h2>
           <div>
-            {gameOver && message.includes("terminé") && (
-              <button style={buttonStyle} onClick={nextLevel}>➡ Continuer</button>
+            {gameOver && message === "WIN" && (
+              <button style={buttonStyle} onClick={nextLevel}>➡ {t("memoryGame.next")}</button>
             )}
-            <button style={buttonStyle} onClick={replayLevel}>🔄 Rejouer</button>
+            <button style={buttonStyle} onClick={replayLevel}> {t("memoryGame.replay")}</button>
           </div>
         </div>
       )}

@@ -48,12 +48,13 @@ export const relationService = {
     return response.data;
   },
 
-  // Bloquer un utilisateur
+  //bloquer 
   blockUser: async (blockedUserId) => {
-    const response = await api.post('/relation/block', {
+    const response = await api.post('/relations/block', {
       blockedUserId
     });
-    },
+    return response.data;
+  },
 
 
   // Débloquer un utilisateur

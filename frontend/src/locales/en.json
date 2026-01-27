@@ -8,7 +8,8 @@
     "connect": "Login",
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
-    "register": "Register"
+    "register": "Register",
+     "loading": "Logging in..."
   },
   "register": {
     "createAccount": "Create your account",
@@ -22,6 +23,16 @@
     "alreadyHaveAccount": "Already have an account?",
     "login": "Login"
   },
+
+   "profilPic": {
+    "title": "Choose your profile picture",
+    "subtitle": "You can add a picture now or later",
+    "chooseImage": "Choose an image",
+    "choose": "Confirm",
+    "ignore": "Ignore"
+  },
+
+  
    "formCard": {
     "leftText1": "Every conversation takes flight",
     "leftText2": "Connect instantly with your friends, share your moments, and always stay in touch."
@@ -30,7 +41,22 @@
   "title": "Verify your OTP code",
   "description": "We sent a 6-digit verification code to your registered email.",
   "code": "OTP Code",
-  "verify": "Verify and continue"
+  "verify": "Verify and continue",
+   "sentTo": "Code sent to",
+   "verifying": "Verifying...",
+    "resend": "Resend code",
+
+    "success": "Account created successfully!",
+    "successLogin": "Login successful!",
+    "resent": "Code resent successfully!",
+
+    "errors": {
+      "incomplete": "Incomplete OTP code",
+      "invalid": "Invalid OTP code",
+      "resendFailed": "Error while resending code"
+    }
+
+
 
 },
  "chat": {
@@ -42,14 +68,36 @@
     "reactions": "Reactions",
     "close": "Close",
     "searchButton": "Search",
-    "searchPlaceholder": "Type to search..."
+    "searchPlaceholder": "Type to search...",
+     "youBlocked": "You have blocked",
+    "blockMessage": "You cannot contact or call this person in this conversation. You will not receive their messages or calls.",
+    "userUnblocked": "User successfully unblocked",
+    "unblock": "Unblock",
+    "blockedByOther": "You cannot send messages to this person"
 
   },
   
   "messages": {
-    "searchFriends": "Search among your friends..."
+    "searchFriends": "Search among your friends...",
+    "noConversations": "No conversations",
+    "noMessages": "No messages",
+    "loading": "Loading...",
+    "noArchivedConversations": "No archived conversations",
+    "noGroupe": "No groups",
+    "all": "All",
+    "groups": "Groups",
+    "searchGroupe": "Search a Groupe...",
+    "favorites": "Favorite conversations",
+    "archived": "Archived conversations",
+    "showAll": "Show all"
+    
   },
-  
+   "buttons": {
+    "newChat": "New conversation"
+  },
+  "common": {
+    "user": "User"
+  },
   "sidebar": {
     "Owly": "Owly",
     "Message": "Message",
@@ -80,7 +128,10 @@
     "changePhoto": "Change photo",
     "deleteAccount": "Delete account",
     "username": "Username",
-    "email": "Email"
+    "email": "Email",
+     "votreqrcode": "Your QR code",
+    "Telecharger": "Download",
+    "Fermer": "Close"
 
   },
   "parametresMenu": {
@@ -112,7 +163,9 @@
     "BlockedUsers": "Blocked users",
     "BlockedUsersCount": "user(s) blocked",
     "ChangePassword": "Change password",
-    "ChangePasswordDesc": "Change your current password"
+    "ChangePasswordDesc": "Change your current password",
+     "DeleteAccount": "Delete account",
+    "DeleteAccountDesc": "Permanently delete your account"
   },
   
   "derniereConnexion": {
@@ -166,6 +219,7 @@
     "archiveConversation": "Archive Conversation",
     "lockConversation": "Lock Conversation",
     "block": "Block",
+    "unblock":"Unblock",
     "deleteConversation": "Delete Conversation"
   },
   
@@ -175,7 +229,10 @@
     "archiveConversation": "Archive Conversation",
     "lockConversation": "Lock Conversation",
     "block": "Block",
-    "deleteConversation": "Delete Conversation"
+    "deleteConversation": "Delete Conversation",
+    "blocking": "Blocking…",
+    "unblock": "Unblock",
+    "unblocking": "Unblocking…"
   },
 
   "themeSelector": {
@@ -264,8 +321,163 @@
 
   "IncomingSound": "Incoming calls",
   "IncomingSoundDesc": "Play sound for incoming calls"
-}
+},
+
+
+  "confirmBlockModal": {
+  "blockTitle": "Block {{name}}?",
+  "blockDescription": "By blocking this person, they will no longer be able to send you messages or call you. They won't be notified that you blocked them.",
+  "unblockTitle": "Unblock {{name}}?",
+  "unblockDescription": "This person will be able to message and call you again.",
+  "cancel": "Cancel",
+  "block": "Block",
+  "unblock": "Unblock"
+},
+
+
+
+"deleteAccount": {
+    "title": "Delete Account?",
+    "description": "This action is permanent Enter your password to confirm.",
+    "passwordPlaceholder": "Your password",
+    "cancel": "Cancel",
+    "confirm": "Delete"
+  },
+  
+  "confirmArchiveModal": {
+    "archiveTitle": "Archive {{name}}?",
+    "unarchiveTitle": "Unarchive {{name}}?",
+    "archiveDescription": "This conversation will be moved to archives. You can restore it at any time.",
+    "unarchiveDescription": "This conversation will be restored to your active conversations.",
+    "cancel": "Cancel",
+    "archive": "Archive",
+    "unarchive": "Unarchive"
+  },
+   "supprimerCompte": {
+    "titre": "Delete Account",
+    "attention": "Warning: This action is irreversible",
+    "avertissement": "Deleting your account will result in the permanent loss of all your data, conversations, and settings.",
+    "sousTitre": "To confirm deletion, please enter your password",
+    "motDePasse": "Enter your password",
+    "annuler": "Cancel",
+    "confirmer": "Delete permanently",
+    "enCours": "Deleting..."
+  },
+
+
  
+   "rockPaper": {
+    "title": "Rock Paper Scissors",
+    "player": "Player",
+    "bot": "Bot",
+    "result": {
+      "win": "Victory!",
+      "lose": "Defeat...",
+      "draw": "Draw!"
+    },
+    "back": "Back"
+  },
+   "memoryGame": {
+    "timeLeft": "⏳ Time Left",
+    "level": "Level",
+   "start": "Start",
+    "pause": "Pause",
+    "reset": "Reset",
+    "next": "➡ Next",
+    "replay": "🔄 Replay",
+    "levelCompleted": "🎉 Level Completed!",
+    "timeOver": "⏱ Time's up! Restart from Level 1!",
+    "back": "Back"
+  },
+   "guessNumber": {
+    "title": "Guess the Number",
+    "startMessage": "🎯 Guess the number between 1 and {{max}}!",
+    "invalid": "❌ Enter a number between 1 and {{max}}!",
+    "win": "🎉 CONGRATS! You found it in {{count}} attempt!",
+    "win_plural": "🎉 CONGRATS! You found it in {{count}} attempts!",
+
+    "attempts": "Attempts",
+    "placeholder": "Your number...",
+    "go": "GO!",
+    "replay": "Play again",
+
+    "history": "Your guesses",
+
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+
+    "hot": "🔥 VERY HOT!",
+    "warm": "🌡️ Hot!",
+    "cool": "😐 Warm",
+    "cold": "❄️ Cold",
+
+    "higher": "📈 Higher!",
+    "lower": "📉 Lower!"
+  },
+   "higher": "It's higher!",
+    "lower": "It's lower!",
+    "owlyQuiz": {
+    "title": "Owly Quiz",
+    "intro": "This game tells the story of Owly. To discover it, complete each challenge.",
+
+    "btn": {
+      "start": "Start",
+      "nextChallenge": "Next challenge",
+      "retry": "🔁 Retry",
+      "restart": "Restart game",
+      "replay": "Play again"
+    },
+
+    "puzzle": {
+      "title": "Puzzle — rebuild the image",
+      "timer": "Time"
+    },
+
+    "memory": {
+      "title": "Memory challenge"
+    },
+
+    "cups": {
+      "title": "Speed & logic challenge — Find the ball!"
+    },
+
+    "observation": {
+      "title": "Visual observation challenge",
+      "question": "Which symbol was at position {{pos}}?"
+    },
+
+    "final": {
+      "title": "Final question",
+       "question": "What does Owly symbolize in the story?",
+      "options": ["Power", "Connection", "Wealth", "Secret"]
+    },
+
+    "stages": {
+      "gameOver": "💥 Game Over",
+      "lostText": "You failed. Try again to continue Owly's story."
+    },
+
+"story": [
+  "Rayane walks through the city, observing the people around him. The street is lively, filled with movement, laughter, and hurried passersby.",
+  "He notices a glowing owl perched on a lamppost, sending a shiver of curiosity down his spine.",
+  "Intrigued, he follows the owl through narrow alleys, discovering mysterious symbols painted on walls and shop windows.",
+  "The city seems to light up gradually, as if each step Rayane takes reveals a long-hidden secret.",
+  "Finally, the owl lands on a quiet square. Rayane approaches and understands the message Owly wants to convey."
+],
+
+"storySummary": [
+  "Rayane walks through the city and notices a glowing owl that catches his attention.",
+  "His curiosity grows, and he decides to follow the mysterious symbol.",
+  "The streets light up, revealing clues about Owly’s story.",
+  "Finally, Owly delivers its message, concluding the adventure."
+],
+  
+"finished": {
+      "title": "Full Story of Owly"
+    }
+   
+  }
 
 }
 

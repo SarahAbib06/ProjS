@@ -24,12 +24,24 @@ import { useAppel } from "../context/AppelContext";
 import VideoCall from "./VideoCall";
 import AudioCall from "./AudioCall";
 import IncomingCallModal from "./IncomingCallModal.jsx";
-import ThemeSelector from "./ThemeSelect";
+import socketService from "../services/socketService";
+import ThemeSelector from "./ThemeSelector";
 import AudioMessage from "./AudioMessage";
 import ChatOptionsMenu from "./ChatOptionMenu";
 import InfoContactModal from "./InfoContactModal";
 import { motion } from "framer-motion";
 import { FiSearch } from "react-icons/fi";
+
+import { Archive } from "lucide-react";
+import { useChat } from "../context/ChatContext";
+import EmojiPicker from 'emoji-picker-react';
+
+import { useBlockStatus } from "../hooks/useBlockStatut";
+import ConfirmBlockModal from "./ConfirmBlockModal";
+import ForwardModal from "./ForwardModal";
+import { useConversations } from "../hooks/useConversations";
+import MessageRequestBanner from "./MessageRequestBanner";
+import Modal from "./Modal";
 
 const SeenIconGray = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 48 48">
@@ -99,18 +111,316 @@ const fileToBase64 = (file) =>
 
 const EMOJI_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "😡", "🔥", "🎉"];
 
-export default function ChatWindow({ selectedChat, onBack }) {
+// Composant Typing Indicator
+const TypingIndicator = ({ avatar, username, selectedChat }) => (
+  <div className="flex justify-start items-start gap-2 mb-3">
+    {/* Avatar */}
+    <div className="w-8 h-8 flex-shrink-0">
+      <img
+        src={avatar || "/default-avatar.png"}
+        alt={username || "Utilisateur"}
+        className="w-8 h-8 rounded-full object-cover"
+      />
+    </div>
+   
+    {/* Bulle de message avec animation */}
+    <div className="flex flex-col max-w-[70%]">
+      {username && !selectedChat?.isGroup && (
+        <p className="text-[10px] ml-1 mb-1 text-gray-700 dark:text-gray-300">
+          {username}
+        </p>
+      )}
+     
+      <div className="bg-myGray4 dark:bg-[#2E2F2F] rounded-t-lg rounded-br-lg rounded-bl-none px-4 py-3">
+        <div className="flex items-center gap-1">
+          {/* Animation des trois points */}
+          <div className="flex items-center gap-1">
+            <div
+              className="w-2 h-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-bounce"
+              style={{ animationDelay: '0ms' }}
+            ></div>
+            <div
+              className="w-2 h-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-bounce"
+              style={{ animationDelay: '150ms' }}
+            ></div>
+            <div
+              className="w-2 h-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-bounce"
+              style={{ animationDelay: '300ms' }}
+            ></div>
+          </div>
+        </div>
+      </div>
+     
+      {/* Timestamp (optionnel) */}
+      <div className="text-[10px] mt-1 text-gray-500 dark:text-gray-400">
+        {new Date().toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </div>
+    </div>
+  </div>
+);
+
+export default function ChatWindow({ selectedChat, onBack, onConversationDeleted }) {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, socketConnected } = useAuth();
   const { startCall, currentCall } = useAppel();
+  
+  const isFromArchived = selectedChat?.isFromArchived === true;
+  const { conversations, archivedConversations } = useChat();
+  const isArchived = isFromArchived || archivedConversations.some(c => c._id === selectedChat?._id);
+  console.log("isArchived ?", isArchived, selectedChat?._id);
+  const { archiveConversation, unarchiveConversation } = useChat();
+
+  const [selectedTargetConversation, setSelectedTargetConversation] = useState(null);
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [messageToForward, setMessageToForward] = useState(null);
+  const [deletedMessages, setDeletedMessages] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
+  const [deletedForEveryone, setDeletedForEveryone] = useState([]);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  
+  const { conversations: myConversations, loading: convLoading } = useConversations();
   const chatKey = `theme_${selectedChat?._id ?? "default"}`;
+ 
+  // Récupérer le userId de l'autre utilisateur
+  const otherUserId = selectedChat?.isGroup
+    ? null
+    : selectedChat?.participants?.find(
+        participant => {
+          const participantId = participant._id || participant.id;
+          const currentUserId = user?._id || user?.id || user?.userId;
+          return String(participantId) !== String(currentUserId);
+        }
+      )?._id;
+
+  const otherParticipant = selectedChat?.isGroup
+    ? null
+    : selectedChat?.participants?.find(
+        participant => {
+          const participantId = participant._id || participant.id;
+          const currentUserId = user?._id || user?.id || user?.userId;
+          return String(participantId) !== String(currentUserId);
+        }
+      );
+
+  // Hook pour vérifier le blocage
+  const { isBlocked, blockedBy, unblock, refresh } = useBlockStatus(otherUserId);
+
+  console.log('🔍 DEBUG MESSAGE REQUEST:', {
+    isMessageRequest: selectedChat?.isMessageRequest,
+    messageRequestFor: selectedChat?.messageRequestFor,
+    messageRequestFrom: selectedChat?.messageRequestFrom,
+    currentUserId: user?.id,
+    isForMe: selectedChat?.messageRequestFor?.toString() === user?.id?.toString()
+  });
+
+  // ✅ Vérifier que JE SUIS le destinataire (messageRequestFor)
+  const isIncomingMessageRequest =
+    selectedChat?.isMessageRequest === true &&
+    selectedChat?.messageRequestFor?.toString() === user?.id?.toString();
+
+  console.log('🚨 isIncomingMessageRequest =', isIncomingMessageRequest);
+
+  const [contactStatus, setContactStatus] = useState({
+    isOnline: false,
+    lastSeen: null,
+  });
+
+  const getUserStatusText = () => {
+    // 🟢 Online
+    if (contactStatus.isOnline) {
+      return "En ligne";
+    }
+    // 🔒 Si pas de lastSeen ET offline → Statut masqué
+    if (!contactStatus.lastSeen) {
+      return "";
+    }
+    // ⚪ Offline avec lastSeen
+    if (contactStatus.lastSeen) {
+      const last = new Date(contactStatus.lastSeen);
+      const now = new Date();
+      const diffMs = now - last;
+
+      const diffMin = Math.floor(diffMs / 60000);
+      const diffHour = Math.floor(diffMin / 60);
+
+      if (diffMin < 1) return "En ligne il y a quelques secondes";
+      if (diffMin < 60) return `En ligne il y a ${diffMin} min`;
+      if (diffHour < 24) return `En ligne il y a ${diffHour} h`;
+
+      return "En ligne il y a longtemps";
+    }
+
+    return "En ligne il y a un moment";
+  };
+
+  useEffect(() => {
+    if (!contactStatus.lastSeen || contactStatus.isOnline) return;
+
+    const interval = setInterval(() => {
+      setContactStatus((prev) => ({ ...prev }));
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [contactStatus.lastSeen, contactStatus.isOnline]);
+
+  console.log("selectedChat:", selectedChat, "user:", user);
+  const contactId = React.useMemo(() => {
+    if (!selectedChat || selectedChat.isGroup || !user) return null;
+    const other = selectedChat.participants.find(
+      (p) => String(p._id) !== String(user._id)
+    );
+    return other?._id || null;
+  }, [selectedChat, user]);
+
+  console.log("contactId:", contactId);
+
+  // Récupérer le statut initial
+  useEffect(() => {
+    if (!contactId) return;
+    console.log("🧪 TEST contactId =", contactId);
+
+    fetch(`http://localhost:5000/api/users/${contactId}/status`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("🧪 REPONSE API STATUS =", data);
+        setContactStatus({
+          isOnline: data.isOnline,
+          lastSeen: data.lastSeen,
+        });
+      })
+      .catch(err => console.error("Erreur statut:", err));
+  }, [contactId]);
+
+  // Sauvegarder les messages supprimés
+  useEffect(() => {
+    if (selectedChat?._id && deletedMessages.length > 0) {
+      localStorage.setItem(
+        `deleted_${selectedChat._id}`,
+        JSON.stringify(deletedMessages)
+      );
+    }
+  }, [deletedMessages, selectedChat?._id]);
+
+  const otherUserName = React.useMemo(() => {
+    if (selectedChat?.isGroup) return null;
+   
+    const otherParticipant = selectedChat?.participants?.find(
+      participant => {
+        const participantId = participant._id || participant.id || participant.userId;
+        const currentUserId = user?._id || user?.id || user?.userId;
+        return participantId && currentUserId && String(participantId) !== String(currentUserId);
+      }
+    );
+   
+    if (otherParticipant?.username) {
+      return otherParticipant.username;
+    }
+   
+    if (selectedChat?.name) {
+      return selectedChat.name;
+    }
+   
+    if (selectedChat?.targetUser?.username) {
+      return selectedChat.targetUser.username;
+    }
+   
+    return null;
+  }, [selectedChat, user]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showEmojiPicker && !event.target.closest('.EmojiPickerReact')) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showEmojiPicker]);
+
+  // Charger les messages supprimés au démarrage
+  useEffect(() => {
+    if (selectedChat?._id) {
+      const saved = localStorage.getItem(`deleted_${selectedChat._id}`);
+      if (saved) {
+        try {
+          setDeletedMessages(JSON.parse(saved));
+        } catch (e) {
+          console.error("Erreur chargement messages supprimés:", e);
+        }
+      }
+    }
+  }, [selectedChat?._id]);
+
+  // Écouter les changements en temps réel via socket
+  useEffect(() => {
+    if (!socketService.socket || !contactId) return;
+   
+    window.socket = socketService.socket;
+    console.log("🌐 Socket accessible via window.socket");
+   
+    const handleOnline = ({ userId }) => {
+      if (!contactId) return;
+      if (String(userId) === String(contactId)) {
+        setContactStatus({
+          isOnline: true,
+          lastSeen: null,
+        });
+      }
+    };
+
+    const handleOffline = ({ userId, lastSeen }) => {
+      console.log("🔴 user offline reçu:", userId, lastSeen, "contactId:", contactId);
+      if (!contactId) return;
+
+      if (String(userId) === String(contactId)) {
+        setContactStatus({
+          isOnline: false,
+          lastSeen: lastSeen ? new Date(lastSeen).toISOString() : new Date().toISOString(),
+        });
+      }
+    };
+
+    socketService.socket.on("user:online", handleOnline);
+    socketService.socket.on("user:offline", handleOffline);
+
+    return () => {
+      socketService.socket.off("user:online", handleOnline);
+      socketService.socket.off("user:offline", handleOffline);
+    };
+  }, [contactId]);
 
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [themeStyle, setThemeStyle] = useState({});
+ 
+  // Écoute les thèmes envoyés par l'autre participant
+  useEffect(() => {
+    if (!socketService.socket || !selectedChat) return;
+
+    const handleThemeChange = ({ conversationId, theme }) => {
+      if (conversationId === selectedChat._id) {
+        console.log("Thème reçu via socket:", theme);
+        applyTheme(theme, false);
+      }
+    };
+
+    socketService.socket.on("themeChanged", handleThemeChange);
+
+    return () => {
+      socketService.socket.off("themeChanged", handleThemeChange);
+    };
+  }, [selectedChat]);
+
   const [bubbleBg, setBubbleBg] = useState("");
   const [sendBtnColor, setSendBtnColor] = useState("");
   const [themeEmojis, setThemeEmojis] = useState([]);
   const [inputText, setInputText] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [floatingEmojis, setFloatingEmojis] = useState([]);
@@ -118,7 +428,7 @@ export default function ChatWindow({ selectedChat, onBack }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [pinnedMessages, setPinnedMessages] = useState([]);
   const [showPinnedSection, setShowPinnedSection] = useState(false);
-
+ 
   // États pour les interactions
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(null);
@@ -127,6 +437,8 @@ export default function ChatWindow({ selectedChat, onBack }) {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const messagesContainerRef = useRef(null);
+ 
+  const [isConfirmUnblockModalOpen, setIsConfirmUnblockModalOpen] = useState(false);
 
   // Hooks pour la messagerie
   const {
@@ -150,7 +462,7 @@ export default function ChatWindow({ selectedChat, onBack }) {
   const { isRecording, recordingTime, startRecording, stopAndSend, cancelRecording } =
     useAudioRecorder(selectedChat?._id);
 
-  // 🔥 Charger les messages épinglés
+  // Charger les messages épinglés
   useEffect(() => {
     const pinned = messages.filter((msg) => msg.isPinned);
     setPinnedMessages(pinned);
@@ -160,7 +472,10 @@ export default function ChatWindow({ selectedChat, onBack }) {
   // Scroll automatique vers le bas
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isTyping]);
+
+  useEffect(() => {
+  }, [selectedChat, archivedConversations]);
 
   // Gérer la saisie avec typing indicator
   const handleInputChange = (e) => {
@@ -172,35 +487,40 @@ export default function ChatWindow({ selectedChat, onBack }) {
 
   // Envoyer un message
   const handleSendMessage = async () => {
-    if (!inputText.trim()) return;
-
     try {
+      if (selectedFile) {
+        if (selectedFile.type.startsWith("image/")) {
+          await sendImage(selectedFile);
+        } else if (selectedFile.type.startsWith("video/")) {
+          await sendVideo(selectedFile);
+        } else {
+          await sendFile(selectedFile);
+        }
+
+        setSelectedFile(null);
+        setFilePreview(null);
+        return;
+      }
+
+      if (!inputText.trim()) return;
       await sendMessage(inputText);
       setInputText("");
     } catch (error) {
-      console.error("Erreur envoi message:", error);
-      alert("Erreur lors de l'envoi du message");
+      console.error("Erreur envoi:", error);
     }
   };
 
   // Gérer l'upload de fichiers
-  const handleFileSelect = async (e) => {
+  const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    try {
-      const fileType = file.type;
-
-      if (fileType.startsWith("image/")) {
-        await sendImage(file);
-      } else if (fileType.startsWith("video/")) {
-        await sendVideo(file);
-      } else {
-        await sendFile(file);
-      }
-    } catch (error) {
-      console.error("Erreur upload fichier:", error);
-      alert("Erreur lors de l'envoi du fichier");
+   
+    setSelectedFile(file);
+   
+    if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+      setFilePreview(URL.createObjectURL(file));
+    } else {
+      setFilePreview(null);
     }
   };
 
@@ -218,13 +538,20 @@ export default function ChatWindow({ selectedChat, onBack }) {
     }
   };
 
+  // Gestion emoji
+  const onEmojiClick = (emojiObject) => {
+    setInputText((prevInput) => prevInput + emojiObject.emoji);
+  };
+
   // Gestion du thème
-  const applyTheme = async (theme, save = true) => {
+  const applyTheme = React.useCallback(async (theme, save = true) => {
+    console.log("Thème sélectionné :", theme);
     let style = {};
     setThemeEmojis([]);
 
     const emojisFromTheme = theme?.emojis ?? (theme?.emoji ? [theme.emoji] : null);
 
+    // Gestion upload fichier
     if (theme.type === "upload" && theme.value instanceof File) {
       const base64 = await fileToBase64(theme.value);
       style = {
@@ -236,10 +563,15 @@ export default function ChatWindow({ selectedChat, onBack }) {
       setThemeStyle(style);
       setSendBtnColor("");
       setBubbleBg("");
-      if (save) localStorage.setItem(chatKey, JSON.stringify({ ...theme, value: base64 }));
+     
+      if (save) {
+        localStorage.setItem(chatKey, JSON.stringify({ ...theme, value: base64 }));
+        await saveThemeToBackend({ ...theme, value: base64 });
+      }
       return;
     }
 
+    // Gestion image (URL ou base64)
     if ((theme.type === "image" || theme.type === "upload") && typeof theme.value === "string") {
       style = {
         backgroundImage: `url(${theme.value})`,
@@ -250,10 +582,15 @@ export default function ChatWindow({ selectedChat, onBack }) {
       setThemeStyle(style);
       setSendBtnColor("");
       setBubbleBg("");
-      if (save) localStorage.setItem(chatKey, JSON.stringify(theme));
+     
+      if (save) {
+        localStorage.setItem(chatKey, JSON.stringify(theme));
+        await saveThemeToBackend(theme);
+      }
       return;
     }
 
+    // Gestion couleurs, gradients, saisonniers
     if (theme.type === "color" || theme.type === "gradient" || theme.type === "seasonal") {
       style = { background: theme.value };
       setThemeStyle(style);
@@ -283,59 +620,264 @@ export default function ChatWindow({ selectedChat, onBack }) {
         setFloatingEmojis([]);
       }
 
-      if (save) localStorage.setItem(chatKey, JSON.stringify(theme));
+      if (save) {
+        localStorage.setItem(chatKey, JSON.stringify(theme));
+        await saveThemeToBackend(theme);
+      }
+    }
+  }, [selectedChat?._id, chatKey]);
+
+  // Sauvegarder dans le backend
+  const saveThemeToBackend = async (theme) => {
+    try {
+      const token = localStorage.getItem("token");
+     
+      console.log("💾 Sauvegarde thème backend:", {
+        conversationId: selectedChat._id,
+        type: theme.type,
+        hasEmojis: theme.emojis?.length > 0,
+      });
+
+      const response = await fetch("http://localhost:5000/api/themes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          conversationId: selectedChat._id,
+          type: theme.type,
+          value: theme.value,
+          emojis: theme.emojis || (theme.emoji ? [theme.emoji] : []),
+          name: theme.name || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("❌ Erreur sauvegarde thème:", error);
+        return;
+      }
+
+      const data = await response.json();
+      console.log("✅ Thème sauvegardé avec succès:", data);
+    } catch (error) {
+      console.error("💥 Erreur réseau sauvegarde thème:", error);
     }
   };
 
-  const removeTheme = () => {
+  // Charger depuis le backend
+  const loadThemeFromBackend = React.useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+     
+      console.log("📥 Chargement thème backend pour:", selectedChat._id);
+
+      const response = await fetch(
+        `http://localhost:5000/api/themes/${selectedChat._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.log("ℹ️ Pas de thème en backend, utilisation localStorage");
+       
+        const savedTheme = localStorage.getItem(chatKey);
+        if (savedTheme) {
+          const parsed = JSON.parse(savedTheme);
+          applyTheme(parsed, false);
+        }
+        return;
+      }
+
+      const data = await response.json();
+      console.log("✅ Thème chargé depuis backend:", data);
+
+      if (data.success && data.data) {
+        const theme = {
+          type: data.data.type,
+          value: data.data.value,
+          emojis: data.data.emojis,
+          name: data.data.name,
+        };
+       
+        applyTheme(theme, false);
+        localStorage.setItem(chatKey, JSON.stringify(theme));
+      }
+    } catch (error) {
+      console.error("💥 Erreur chargement thème:", error);
+     
+      const savedTheme = localStorage.getItem(chatKey);
+      if (savedTheme) {
+        const parsed = JSON.parse(savedTheme);
+        applyTheme(parsed, false);
+      }
+    }
+  }, [selectedChat?._id, chatKey, applyTheme]);
+
+  // Supprimer le thème
+  const removeTheme = async () => {
     setThemeStyle({});
     setBubbleBg("");
     setSendBtnColor("");
     setThemeEmojis([]);
     setFloatingEmojis([]);
     localStorage.removeItem(chatKey);
+   
+    try {
+      const token = localStorage.getItem("token");
+     
+      const response = await fetch(
+        `http://localhost:5000/api/themes/${selectedChat._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        console.log("✅ Thème supprimé du backend");
+      } else {
+        console.error("❌ Erreur suppression thème backend");
+      }
+    } catch (error) {
+      console.error("💥 Erreur réseau suppression thème:", error);
+    }
   };
 
-  // Charger le thème sauvegardé
+  // Chargement du thème
   useEffect(() => {
-    const savedTheme = localStorage.getItem(chatKey);
-    if (savedTheme) {
-      try {
-        const parsed = JSON.parse(savedTheme);
-        applyTheme(parsed, false);
-      } catch (e) {
-        console.error("Erreur chargement thème:", e);
+    if (selectedChat?._id) {
+      loadThemeFromBackend();
+    }
+  }, [selectedChat?._id, loadThemeFromBackend]);
+
+  // Écouter les changements Socket.io
+  useEffect(() => {
+    if (!socketService.socket || !selectedChat) return;
+
+    const handleThemeChanged = ({ conversationId, theme }) => {
+      if (conversationId === selectedChat._id) {
+        console.log("🎨 Thème reçu via socket:", theme);
+        applyTheme(theme, false);
+        localStorage.setItem(chatKey, JSON.stringify(theme));
+      }
+    };
+
+    const handleThemeRemoved = ({ conversationId }) => {
+      if (conversationId === selectedChat._id) {
+        console.log("🗑️ Thème supprimé via socket");
+       
+        setThemeStyle({});
+        setBubbleBg("");
+        setSendBtnColor("");
+        setThemeEmojis([]);
+        setFloatingEmojis([]);
+        localStorage.removeItem(chatKey);
+      }
+    };
+
+    socketService.socket.on("themeChanged", handleThemeChanged);
+    socketService.socket.on("themeRemoved", handleThemeRemoved);
+
+    return () => {
+      socketService.socket.off("themeChanged", handleThemeChanged);
+      socketService.socket.off("themeRemoved", handleThemeRemoved);
+    };
+  }, [selectedChat, chatKey, applyTheme]);
+
+  // Gestion suppression message
+  const handleDeleteForMe = (messageId) => {
+    setDeletedMessages((prev) => {
+      if (prev.includes(messageId)) return prev;
+      return [...prev, messageId];
+    });
+    setShowMessageMenu(null);
+    setShowDeleteModal(false);
+  };
+
+  const handleDeleteForEveryone = async (messageId) => {
+    try {
+      setDeletedForEveryone((prev) => [...new Set([...prev, messageId])]);
+
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/messages/${messageId}/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setDeletedForEveryone((prev) => prev.filter((id) => id !== messageId));
+        throw new Error(data.error || "Erreur lors de la suppression");
+      }
+
+      console.log("Message supprimé pour tous :", data);
+      setShowDeleteModal(false);
+
+    } catch (err) {
+      console.error("Échec suppression pour tous :", err);
+    }
+  };
+
+  // Écouter les suppressions de messages via socket
+  useEffect(() => {
+    if (!socketService.socket || !selectedChat?._id) return;
+
+    const handleMessageDeleted = (data) => {
+      const { messageId, conversationId: convId } = data;
+
+      if (convId !== selectedChat._id) return;
+
+      setDeletedForEveryone((prev) => [...new Set([...prev, messageId])]);
+
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    };
+
+    socketService.socket.on("message:deleted", handleMessageDeleted);
+
+    return () => {
+      socketService.socket.off("message:deleted", handleMessageDeleted);
+    };
+  }, [selectedChat?._id]);
+
+  // Sauvegarde permanente des suppressions "pour tout le monde"
+  useEffect(() => {
+    if (selectedChat?._id && deletedForEveryone.length > 0) {
+      localStorage.setItem(
+        `deletedEveryone_${selectedChat._id}`,
+        JSON.stringify(deletedForEveryone)
+      );
+    }
+  }, [deletedForEveryone, selectedChat?._id]);
+
+  // Charge les suppressions "pour tout le monde" au démarrage
+  useEffect(() => {
+    if (selectedChat?._id) {
+      const saved = localStorage.getItem(`deletedEveryone_${selectedChat._id}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setDeletedForEveryone(parsed);
+          }
+        } catch (e) {
+          console.error("Erreur chargement deletedEveryone :", e);
+        }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedChat]);
-
-  // Animation des emojis flottants
-  useEffect(() => {
-    if (!themeEmojis || themeEmojis.length === 0) return;
-
-    const id = setInterval(() => {
-      setFloatingEmojis((prev) => {
-        if (!prev || prev.length === 0) return prev;
-        return prev.map((e) => {
-          let newTop = e.top + e.speed * 0.25;
-          if (newTop > 110) newTop = -10;
-          let newLeft = e.left + 0.2 * e.direction;
-          if (newLeft < 0) {
-            newLeft = 0;
-            e.direction = 1;
-          } else if (newLeft > 100) {
-            newLeft = 100;
-            e.direction = -1;
-          }
-          const newRotate = e.rotate + (Math.random() - 0.5) * 2;
-          return { ...e, top: newTop, left: newLeft, rotate: newRotate };
-        });
-      });
-    }, 60);
-
-    return () => clearInterval(id);
-  }, [themeEmojis]);
+  }, [selectedChat?._id]);
 
   // ============ FONCTIONS D'APPEL VIDÉO/VOCAL ============
 
@@ -444,20 +986,60 @@ export default function ChatWindow({ selectedChat, onBack }) {
 
   const bubbleClasses = (fromMe) =>
     fromMe
-      ? "bg-myYellow2 dark:bg-mydarkYellow text-myBlack rounded-t-xl rounded-bl-xl rounded-br-none px-3 py-2 text-sm"
-      : "bg-myGray4 dark:bg-[#2E2F2F] text-myBlack dark:text-white rounded-t-xl rounded-br-xl rounded-bl-none px-3 py-2 text-sm";
+      ? "bg-myYellow2 dark:bg-mydarkYellow text-myBlack rounded-t-lg rounded-bl-lg rounded-br-none px-4 py-4 text-xs"
+      : "bg-myGray4 dark:bg-[#2E2F2F] text-myBlack dark:!text-white rounded-t-lg rounded-br-lg rounded-bl-none px-4 py-4 text-xs";
 
   // Nom de la conversation
   const conversationName = selectedChat?.isGroup
     ? selectedChat.groupName
-    : selectedChat?.participants?.[0]?.username || "Utilisateur";
+    : otherUserName || selectedChat?.name || "Utilisateur";
 
-  const conversationAvatar = selectedChat?.isGroup
+  // Avatar de la conversation
+  const conversationAvatar = React.useMemo(() => {
+    console.log("🖼️ DEBUG - Recherche photo de profil:");
+    console.log("1. selectedChat:", selectedChat);
+    console.log("2. targetUser:", selectedChat?.targetUser);
+    console.log("3. targetUser.profilePicture:", selectedChat?.targetUser?.profilePicture);
+   
+    if (selectedChat?.isGroup) return "/group-avatar.png";
+   
+    // 1. Chercher dans targetUser (vient de SearchModal)
+    if (selectedChat?.targetUser?.profilePicture) {
+      console.log("✅ Photo trouvée dans targetUser:", selectedChat.targetUser.profilePicture);
+      return selectedChat.targetUser.profilePicture;
+    }
+   
+    // 2. Chercher dans participants
+    const fromParticipants = selectedChat?.participants?.find(
+      p => {
+        const pid = p._id || p.id;
+        const uid = otherUserId;
+        return pid && uid && String(pid) === String(uid);
+      }
+    )?.profilePicture;
+   
+    if (fromParticipants) {
+      console.log("✅ Photo trouvée dans participants:", fromParticipants);
+      return fromParticipants;
+    }
+   
+    console.log("❌ Aucune photo trouvée, utilisation par défaut");
+    return "/default-avatar.png";
+  }, [selectedChat, otherUserId]);
+
+  // Avatar de l'autre utilisateur pour l'indicateur
+  const otherUserAvatar = selectedChat?.isGroup
     ? "/group-avatar.png"
-    : selectedChat?.participants?.[0]?.profilePicture || "/default-avatar.png";
+    : selectedChat?.participants?.find(
+        participant => {
+          const participantId = participant._id || participant.id;
+          const currentUserId = user?._id || user?.id || user?.userId;
+          return String(participantId) !== String(currentUserId);
+        }
+      )?.profilePicture || "/default-avatar.png";
 
-  // 🔥 Composant Message
-  const MessageBubble = ({ msg }) => {
+  // Composant MessageBubble
+  const MessageBubble = ({ msg, deletedMessages, setDeletedMessages }) => {
     const longPressTimer = useRef(null);
 
     const startLongPress = () => {
@@ -484,8 +1066,6 @@ export default function ChatWindow({ selectedChat, onBack }) {
 
     const fromMe =
       currentUserId && messageSenderId && String(currentUserId) === String(messageSenderId);
-
-    console.log("🔍 message from", { currentUserId, messageSenderId, fromMe, msg });
 
     const { reactions, addReaction, removeReaction } = useReactions(msg._id);
 
@@ -533,17 +1113,6 @@ export default function ChatWindow({ selectedChat, onBack }) {
       }
     };
 
-    const handleDeleteMessage = async () => {
-      if (window.confirm("Supprimer ce message ?")) {
-        try {
-          await deleteMessage(msg._id);
-          setShowMessageMenu(null);
-        } catch (error) {
-          console.error("Erreur suppression:", error);
-        }
-      }
-    };
-
     return (
       <div className={`flex ${fromMe ? "justify-end" : "justify-start"} group`}>
         <div className="flex flex-col max-w-[85%] relative">
@@ -555,6 +1124,7 @@ export default function ChatWindow({ selectedChat, onBack }) {
 
           <div className="relative">
             <div
+              id={`message-${msg._id}`}
               className={`${bubbleClasses(fromMe)} ${
                 isMatch ? "ring-2 ring-blue-400" : ""
               } cursor-pointer`}
@@ -582,7 +1152,7 @@ export default function ChatWindow({ selectedChat, onBack }) {
 
               {msg.typeMessage === "image" && (
                 <img
-                  src={msg.fileUrl}
+                  src={msg.content}
                   alt="image"
                   className="max-w-full rounded mt-1"
                   style={{ maxHeight: "300px" }}
@@ -591,7 +1161,7 @@ export default function ChatWindow({ selectedChat, onBack }) {
 
               {msg.typeMessage === "video" && (
                 <video
-                  src={msg.fileUrl}
+                  src={msg.content}
                   controls
                   className="max-w-full rounded mt-1"
                   style={{ maxHeight: "300px" }}
@@ -601,10 +1171,9 @@ export default function ChatWindow({ selectedChat, onBack }) {
               {msg.typeMessage === "audio" && (
                 <AudioMessage src={msg.content || msg.fileUrl} />
               )}
-
               {msg.typeMessage === "file" && (
                 <a
-                  href={msg.fileUrl}
+                  href={msg.content}
                   download
                   className="flex items-center gap-2 underline"
                 >
@@ -638,7 +1207,9 @@ export default function ChatWindow({ selectedChat, onBack }) {
                 </button>
                 <button
                   onClick={() => {
-                    alert("Sélectionnez une conversation de destination");
+                    setMessageToForward(msg);
+                    setSelectedTargetConversation(null);
+                    setShowForwardModal(true);
                     setShowMessageMenu(null);
                   }}
                   className="w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm text-gray-900 dark:text-white"
@@ -647,8 +1218,12 @@ export default function ChatWindow({ selectedChat, onBack }) {
                 </button>
                 {fromMe && (
                   <button
-                    onClick={handleDeleteMessage}
-                    className="w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm text-red-500"
+                    onClick={() => {
+                      setMessageToDelete(msg._id);
+                      setShowDeleteModal(true);
+                      setShowMessageMenu(null);
+                    }}
+                    className="w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm text-red-600"
                   >
                     <Trash2 size={16} /> Supprimer
                   </button>
@@ -694,12 +1269,21 @@ export default function ChatWindow({ selectedChat, onBack }) {
           )}
 
           <div
-            className={`text-[8px] mt-1 flex items-center gap-1 ${
+            className={`text-[10px] mt-1 flex items-center gap-1.5 ${
               fromMe ? "justify-end" : "justify-start"
-            } text-gray-700 dark:text-gray-300`}
+            } text-gray-500 dark:text-gray-400`}
           >
             <span>{messageTime}</span>
-            {fromMe && msg.seen && <SeenIconGray />}
+
+            {fromMe && (
+              <span className="flex items-center gap-1">
+                {msg.status === "sending" ? (
+                  <span className="text-gray-400">✓</span>
+                ) : (
+                  <span className="text-gray-500">✓✓</span>
+                )}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -774,15 +1358,16 @@ export default function ChatWindow({ selectedChat, onBack }) {
               <div className="text-sm font-semibold truncate">
                 {conversationName}
               </div>
-              <div className="text-xs truncate text-gray-700 dark:text-gray-300">
-                {isTyping && typingUsers.length > 0 ? (
-                  <span className="text-green-500 font-medium">
-                    {t("chat.typing") || "En train d'écrire"}...
-                  </span>
-                ) : selectedChat?.isGroup ? (
+              <div className="text-xs truncate text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                {selectedChat?.isGroup ? (
                   `${selectedChat?.participants?.length || 0} membres`
                 ) : (
-                  t("chat.online") || "En ligne"
+                  <span className="flex items-center gap-1">
+                    {contactStatus.isOnline && (
+                      <span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+                    )}
+                    <span className="text-gray-500 text-xs">{getUserStatusText()}</span>
+                  </span>
                 )}
               </div>
             </div>
@@ -798,6 +1383,7 @@ export default function ChatWindow({ selectedChat, onBack }) {
               className="text-gray-600 dark:text-gray-300 cursor-pointer hover:text-blue-500 transition-colors"
               onClick={handleVideoCall}
             />
+           
             <button onClick={() => setIsOptionsOpen(true)}>
               <MoreVertical
                 size={16}
@@ -807,27 +1393,121 @@ export default function ChatWindow({ selectedChat, onBack }) {
           </div>
         </header>
 
+        {/* DEMANDE DE MESSAGE */}
+        {isIncomingMessageRequest && (
+          <MessageRequestBanner
+            conversationName={conversationName}
+            conversationAvatar={conversationAvatar}
+            onAccept={async () => {
+              const token = localStorage.getItem("token");
+              try {
+                console.log('🟢 Acceptation demande pour conversation:', selectedChat._id);
+               
+                const res = await fetch("http://localhost:5000/api/relations/accept-request", {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ conversationId: selectedChat._id }),
+                });
+
+                const data = await res.json();
+                console.log('✅ Réponse accept:', data);
+
+                if (res.ok) {
+                  window.location.reload();
+                } else {
+                  console.error('❌ Erreur accept:', data);
+                  alert(data.error || "Erreur lors de l'acceptation");
+                }
+              } catch (err) {
+                console.error('❌ Erreur réseau accept:', err);
+                alert("Erreur réseau");
+              }
+            }}
+            onDelete={async () => {
+              if (!confirm("Supprimer cette demande de message ?")) return;
+
+              const token = localStorage.getItem("token");
+              try {
+                console.log('🔴 Suppression demande pour conversation:', selectedChat._id);
+               
+                const res = await fetch("http://localhost:5000/api/relations/delete-request", {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ conversationId: selectedChat._id }),
+                });
+
+                const data = await res.json();
+                console.log('✅ Réponse delete:', data);
+
+                if (res.ok) {
+                  onBack();
+                } else {
+                  console.error('❌ Erreur delete:', data);
+                  alert(data.error || "Erreur lors de la suppression");
+                }
+              } catch (err) {
+                console.error('❌ Erreur réseau delete:', err);
+                alert("Erreur réseau");
+              }
+            }}
+          />
+        )}
+
         {/* SECTION MESSAGES ÉPINGLÉS */}
-        {showPinnedSection && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-3 py-2 z-20">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+        {showPinnedSection && pinnedMessages.length > 0 && (
+          <div className="border-b border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/40 z-20">
+            <div className="flex items-center justify-between px-3 py-1.5">
+              <div className="flex items-center gap-1.5">
                 <Pin size={14} className="text-yellow-600 dark:text-yellow-400" />
                 <span className="text-xs font-medium text-yellow-800 dark:text-yellow-300">
-                  {pinnedMessages.length} message
-                  {pinnedMessages.length > 1 ? "s" : ""} épinglé
-                  {pinnedMessages.length > 1 ? "s" : ""}
+                  {pinnedMessages.length} épinglé{pinnedMessages.length > 1 ? "s" : ""}
                 </span>
               </div>
               <button
                 onClick={() => setShowPinnedSection(false)}
-                className="text-yellow-600 dark:text-yellow-400"
+                className="text-yellow-600 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-800/50 rounded p-0.5 transition"
               >
                 <X size={14} />
               </button>
             </div>
-            <div className="mt-1 text-xs text-gray-700 dark:text-gray-300 truncate">
-              {pinnedMessages[0]?.content || "Message épinglé"}
+
+            <div className="max-h-28 overflow-y-auto px-3 pb-2 scrollbar-thin scrollbar-thumb-yellow-500 scrollbar-track-yellow-100 dark:scrollbar-thumb-yellow-300 dark:scrollbar-track-yellow-900/50">
+              <div className="space-y-1.5">
+                {pinnedMessages.map((msg) => (
+                  <button
+                    key={msg._id}
+                    onClick={() => {
+                      const element = document.getElementById(`message-${msg._id}`);
+                      if (element) {
+                        element.scrollIntoView({ behavior: "smooth", block: "center" });
+                        element.classList.add("ring-3", "ring-yellow-400");
+                        setTimeout(() => element.classList.remove("ring-3", "ring-yellow-400"), 1500);
+                      }
+                    }}
+                    className="w-full text-left bg-white dark:bg-gray-800 rounded shadow-sm hover:shadow transition p-2 text-xs border border-yellow-200 dark:border-yellow-700 block"
+                  >
+                    <div className="line-clamp-1 text-gray-800 dark:text-gray-200 font-medium">
+                      {msg.typeMessage === "text" && msg.content}
+                      {msg.typeMessage === "image" && "📷 Photo"}
+                      {msg.typeMessage === "video" && "🎥 Vidéo"}
+                      {msg.typeMessage === "audio" && "🎤 Vocal"}
+                      {msg.typeMessage === "file" && `📎 ${msg.fileName || "Fichier"}`}
+                    </div>
+                    <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                      {new Date(msg.createdAt).toLocaleTimeString("fr-FR", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -859,121 +1539,228 @@ export default function ChatWindow({ selectedChat, onBack }) {
           {messages.map((msg, i) => {
             const showDate =
               i === 0 ||
-              messages[i - 1].createdAt?.split("T")[0] !==
-                msg.createdAt?.split("T")[0];
+              messages[i - 1]?.createdAt?.split("T")[0] !== msg.createdAt?.split("T")[0];
+
+            const isDeletedByMe = deletedMessages.includes(msg._id);
+            const isDeletedForEveryone = deletedForEveryone.includes(msg._id);
+
+            const currentUserId = user?._id || user?.id || user?.userId;
+            const rawSender = msg.senderId || msg.sender || msg.Id_sender || msg.Id_User || msg.userId;
+            const messageSenderId = typeof rawSender === "object" && rawSender?._id ? rawSender._id : rawSender;
+            const wasFromMe = currentUserId && messageSenderId && String(currentUserId) === String(messageSenderId);
+
+            if (isDeletedByMe || isDeletedForEveryone) {
+              return (
+                <div key={msg._id}>
+                  {showDate && (
+                    <div className="text-center text-[10px] text-gray-700 dark:text-gray-400 my-2">
+                      <span className="bg-myYellow2 px-5 py-2 dark:bg-myYellow rounded-lg">
+                        {formatDateLabel(msg.createdAt, t)}
+                      </span>
+                    </div>
+                  )}
+                  <div className={`flex ${wasFromMe ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`
+                        max-w-[85%] px-4 py-3 rounded-lg text-sm italic text-gray-500 dark:text-gray-400
+                        ${wasFromMe
+                          ? "bg-myYellow2 dark:bg-mydarkYellow/30 rounded-t-lg rounded-bl-lg rounded-br-none"
+                          : "bg-myGray4 dark:bg-[#2E2F2F] rounded-t-lg rounded-br-lg rounded-bl-none"}
+                      `}
+                    >
+                      Vous avez supprimé un message
+                    </div>
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <div key={msg._id}>
                 {showDate && (
-                  <div className="text-center text-[10px] text-gray-700 dark:text-gray-300 my-2">
-                    {formatDateLabel(msg.createdAt, t)}
+                  <div className="text-center text-[10px] text-gray-700 dark:text-gray-400 my-2">
+                    <span className="bg-myYellow2 px-5 py-2 dark:bg-myYellow rounded-lg">
+                      {formatDateLabel(msg.createdAt, t)}
+                    </span>
                   </div>
                 )}
-                <MessageBubble msg={msg} index={i} />
+                <MessageBubble
+                  msg={msg}
+                  index={i}
+                  deletedMessages={deletedMessages}
+                  setDeletedMessages={setDeletedMessages}
+                />
               </div>
             );
           })}
+
+          {/* INDICATEUR "EN TRAIN D'ÉCRIRE" */}
+          {isTyping && typingUsers.length > 0 && (
+            <TypingIndicator
+              avatar={otherUserAvatar}
+              username={selectedChat?.isGroup ? typingUsers[0]?.username : null}
+              selectedChat={selectedChat}
+            />
+          )}
+
           <div ref={messagesEndRef} />
         </main>
 
         {/* INPUT */}
         <footer className="px-2 py-2 backdrop-blur-sm bg-white/20 dark:bg-black/20 z-20">
-          {isRecording && (
-            <div className="mb-2 flex items-center justify-center gap-2 text-red-500">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium">
-                {Math.floor(recordingTime / 60)}:
-                {(recordingTime % 60).toString().padStart(2, "0")}
-              </span>
-              <button onClick={cancelRecording} className="ml-4 text-xs underline">
-                Annuler
-              </button>
+          {/* ✅ SI BLOQUÉ PAR MOI */}
+          {isBlocked && blockedBy === 'me' ? (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+              <div className="text-center space-y-3">
+                <p className="text-sm text-red-800 dark:text-red-200 font-medium">
+                  {t("chat.youBlocked") || "Vous avez bloqué"} {otherUserName || "cet utilisateur"}
+                </p>
+                <p className="text-xs text-red-600 dark:text-red-300">
+                  {t("chat.blockMessage") || "Vous ne pouvez pas contacter cette personne ou l'appeler dans cette discussion. Vous ne recevez pas ses messages ou appels."}
+                </p>
+                <button
+                  onClick={() => setIsConfirmUnblockModalOpen(true)}
+                  className="px-4 py-2 bg-myYellow hover:bg-yellow-400 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  {t("chat.unblock") || "Débloquer"}
+                </button>
+              </div>
             </div>
-          )}
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 px-2 py-2 rounded-xl flex-1 bg-myGray4 dark:bg-[#2E2F2F] backdrop-blur-md">
-              <Smile
-                size={18}
-                className="text-gray-700 dark:text-gray-300 cursor-pointer"
-              />
-              <Paperclip
-                size={18}
-                className="text-gray-700 dark:text-gray-300 cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              />
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                className="hidden"
-                accept="image/*,video/*,application/*"
-              />
-              <input
-                type="text"
-                className="flex-1 bg-transparent outline-none text-sm text-myBlack dark:text-white"
-                placeholder={t("chat.inputPlaceholder") || "Tapez un message..."}
-                value={inputText}
-                onChange={handleInputChange}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && !isRecording && handleSendMessage()
-                }
-                disabled={isRecording}
-              />
+          ) : isBlocked && blockedBy === 'them' ? (
+            /* ✅ SI BLOQUÉ PAR EUX */
+            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+              <p className="text-sm text-center text-gray-600 dark:text-gray-400">
+                {t("chat.blockedByOther") || "Vous ne pouvez pas envoyer de message à cette personne"}
+              </p>    
             </div>
-            <button
-              className="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-bold text-myBlack"
-              style={{ background: sendBtnColor || "#FFD700" }}
-              onClick={
-                inputText.trim() === "" ? handleMicClick : handleSendMessage
-              }
-            >
-              {inputText.trim() === "" ? (
-                <Mic
-                  size={18}
-                  className={`text-gray-700 dark:text-gray-300 ${
-                    isRecording ? "animate-pulse text-red-500" : ""
-                  }`}
-                />
-              ) : (
-                <Send size={18} />
+          ) : (
+            /* ✅ SINON : INPUT NORMAL */
+            <>
+              {isRecording && (
+                <div className="mb-2 flex items-center justify-center gap-2 text-red-500">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium">
+                    {Math.floor(recordingTime / 60)}:
+                    {(recordingTime % 60).toString().padStart(2, "0")}
+                  </span>
+                  <button onClick={cancelRecording} className="ml-4 text-xs underline">
+                    Annuler
+                  </button>
+                </div>
               )}
-            </button>
-          </div>
+
+              {selectedFile && (
+                <div className="mb-2 p-2 border rounded bg-white dark:bg-neutral-800">
+                  {selectedFile.type.startsWith("image/") && (
+                    <img src={filePreview} className="max-h-40 rounded" alt="preview" />
+                  )}
+
+                  {selectedFile.type.startsWith("video/") && (
+                    <video src={filePreview} controls className="max-h-40 rounded" />
+                  )}
+
+                  {!selectedFile.type.startsWith("image/") &&
+                  !selectedFile.type.startsWith("video/") && (
+                    <p className="text-sm">📎 {selectedFile.name}</p>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setFilePreview(null);
+                    }}
+                    className="text-xs text-red-500 underline mt-1"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              )}
+
+              {/* 🎨 EMOJI PICKER */}
+              <div className="relative">
+                {showEmojiPicker && (
+                  <div className="absolute bottom-16 left-0 z-50">
+                    <EmojiPicker
+                      onEmojiClick={onEmojiClick}
+                      theme={document.documentElement.classList.contains('dark') ? 'dark' : 'light'}
+                      searchDisabled={false}
+                      skinTonesDisabled={false}
+                      height={400}
+                      width={320}
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 w-full">
+                  <div className="flex-1 flex items-center gap-2 px-4 py-4 rounded-xl bg-myGray4 dark:bg-[#2E2F2F] backdrop-blur-md">
+                    {/* 🎨 BOUTON EMOJI */}
+                    <button
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      type="button"
+                    >
+                      <Smile
+                        size={18}
+                        className={`cursor-pointer transition-colors ${
+                          showEmojiPicker
+                            ? 'text-myYellow'
+                            : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      />
+                    </button>
+
+                    <Paperclip
+                      size={18}
+                      className="text-gray-700 dark:text-gray-300 cursor-pointer"
+                      onClick={() => fileInputRef.current?.click()}
+                    />
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      accept="image/*,video/*,application/*"
+                    />
+                    <input
+                      type="text"
+                      className="flex items-center flex-1 bg-transparent outline-none text-xs text-myBlack dark:text-white"
+                      placeholder={t("chat.inputPlaceholder") || "Tapez un message..."}
+                      value={inputText}
+                      onChange={handleInputChange}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && !isRecording && handleSendMessage()
+                      }
+                      disabled={isRecording}
+                    />
+                  </div>
+
+                  <button
+                    className="w-12 h-12 flex items-center justify-center rounded-xl text-sm font-bold text-myBlack bg-myYellow2 dark:bg-mydarkYellow"
+                    onClick={
+                      selectedFile
+                        ? handleSendMessage
+                        : inputText.trim() === ""
+                        ? handleMicClick
+                        : handleSendMessage
+                    }
+                  >
+                    {selectedFile || inputText.trim() !== "" ? (
+                      <Send size={18} />
+                    ) : (
+                      <Mic
+                        size={18}
+                        className={`text-gray-700 dark:myBlack ${
+                          isRecording ? "animate-pulse text-red-500" : ""
+                        }`}
+                      />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </footer>
 
-        {/* MENUS MODAUX */}
-        {isOptionsOpen && (
-          <>
-            <div
-              className="fixed inset-0 bg-black/30 z-30"
-              onClick={() => setIsOptionsOpen(false)}
-            ></div>
-            <ChatOptionsMenu
-              selectedChat={{
-                ...selectedChat,
-                openInfo: () => setIsInfoOpen(true),
-                openTheme: () => {
-                  setShowThemeSelector(true);
-                  setIsOptionsOpen(false);
-                },
-              }}
-              onClose={() => setIsOptionsOpen(false)}
-              onOpenSearch={() => setOpenSearch(true)}
-            />
-          </>
-        )}
-
-        {isInfoOpen && (
-          <InfoContactModal
-            chat={{
-              ...selectedChat,
-              openTheme: () => setShowThemeSelector(true),
-            }}
-            onClose={() => setIsInfoOpen(false)}
-          />
-        )}
-
+        {/* Search Modal */}
         {openSearch && (
           <>
             <div
@@ -995,6 +1782,153 @@ export default function ChatWindow({ selectedChat, onBack }) {
               />
             </motion.div>
           </>
+        )}
+
+        {/* Confirm Unblock Modal */}
+        <ConfirmBlockModal
+          isOpen={isConfirmUnblockModalOpen}
+          onClose={() => setIsConfirmUnblockModalOpen(false)}
+          onConfirm={async () => {
+            setIsConfirmUnblockModalOpen(false);
+            await unblock();
+          }}
+          actionType="unblock"
+          userInfo={{
+            name: otherUserName,
+            avatar: conversationAvatar
+          }}
+        />
+
+        {/* Forward Modal */}
+        <ForwardModal
+          isOpen={showForwardModal}
+          onClose={() => {
+            setShowForwardModal(false);
+            setMessageToForward(null);
+          }}
+          message={messageToForward}
+          conversations={myConversations}
+          currentConversationId={selectedChat?._id}
+          onForward={(targetConversationId) => {
+            forwardMessage(messageToForward?._id, targetConversationId);
+          }}
+        />
+        {showDeleteModal && (
+          <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+            <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl overflow-hidden">
+              {/* Header */}
+              <div className="px-6 py-5 border-b border-gray-200 dark:border-neutral-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Supprimer le message
+                </h3>
+              </div>
+
+              {/* Corps */}
+              <div className="px-6 py-6 space-y-6">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Que voulez-vous faire ?
+                </p>
+
+                <div className="space-y-3">
+                  {/* Supprimer pour moi */}
+                  <button
+                    onClick={() => {
+                      handleDeleteForMe(messageToDelete);
+                      setShowDeleteModal(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-neutral-700 rounded-lg transition"
+                  >
+                    <div className="font-medium">Supprimer pour moi</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Vous ne verrez plus ce message, mais les autres le verront toujours.
+                    </div>
+                  </button>
+
+                  {/* Supprimer pour tout le monde */}
+                  <button
+                    onClick={async () => {
+                      await handleDeleteForEveryone(messageToDelete);
+                      setShowDeleteModal(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                  >
+                    <div className="font-medium">Supprimer pour tout le monde</div>
+                    <div className="text-xs text-red-500/80 dark:text-red-400/80">
+                      Ce message sera supprimé pour vous et les autres participants.
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-gray-50 dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-700 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded-lg transition"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
+        {isOptionsOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/30 z-30"
+              onClick={() => setIsOptionsOpen(false)}
+            ></div>
+            <ChatOptionsMenu
+              selectedChat={{
+                ...selectedChat,
+                userId: selectedChat?.isGroup
+                  ? null
+                  : selectedChat?.participants?.find(
+                      participant => {
+                        const participantId = participant._id || participant.id;
+                        const currentUserId = user?._id || user?.id || user?.userId;
+                        return String(participantId) !== String(currentUserId);
+                      }
+                    )?._id,
+                openInfo: () => setIsInfoOpen(true),
+                openTheme: () => {
+                  setShowThemeSelector(true);
+                  setIsOptionsOpen(false);
+                },
+              }}
+              onClose={() => setIsOptionsOpen(false)}
+              onOpenSearch={() => setOpenSearch(true)}
+              onBlockStatusChange={() => refresh()}
+              onConversationDeleted={onConversationDeleted}
+            />
+          </>
+        )}
+        {isInfoOpen && (
+          <InfoContactModal
+            chat={{
+              ...selectedChat,
+              openTheme: () => setShowThemeSelector(true),
+              onArchive: async () => {
+                try {
+                  if (isArchived) {
+                    await unarchiveConversation(selectedChat._id);
+                    
+                    if (typeof onConversationDeleted === 'function') {
+                      onConversationDeleted();
+                    }
+                  } else {
+                    await archiveConversation(selectedChat._id);
+                  }
+                } catch (err) {
+                  alert("Erreur lors de l'opération");
+                }
+              },
+              isArchived: isArchived,
+            }}
+            onClose={() => setIsInfoOpen(false)}
+            onBlockStatusChange={() => refresh()}
+            onConversationDeleted={onConversationDeleted}
+          />
         )}
       </div>
     </>

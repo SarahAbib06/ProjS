@@ -1,4 +1,3 @@
-// frontend/src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEnvelope, FaLock } from "react-icons/fa";
@@ -23,14 +22,19 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  
-
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
-    setError(""); // Effacer l'erreur quand l'utilisateur tape
+    // NE PAS effacer l'erreur ici - RETIREZ setError("")
+  };
+
+  const handleInputFocus = () => {
+    // Effacer l'erreur seulement quand l'utilisateur clique sur un champ
+    if (error) {
+      setError("");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -64,7 +68,7 @@ const Login = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-myGray3 px-4 relative py-6">
+    <div className="flex justify-center items-center min-h-screen bg-myGray3 dark:bg-black px-4 relative py-6">
       <FormCard 
         title={t("login.welcome")} 
         subtitle={t("login.subtitle")} 
@@ -78,6 +82,7 @@ const Login = () => {
             icon={<FaEnvelope />}
             value={formData.email}
             onChange={handleChange}
+            onFocus={handleInputFocus} // <-- AJOUTEZ CETTE PROP
           />
           <InputField
             type="password"
@@ -86,6 +91,7 @@ const Login = () => {
             icon={<FaLock />}
             value={formData.password}
             onChange={handleChange}
+            onFocus={handleInputFocus} // <-- AJOUTEZ CETTE PROP
           />
 
           {error && (
@@ -98,7 +104,7 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="text-xs text-myBlack cursor-pointer mt-2 mb-8 hover:text-myGray2 dark:text-myWhite  dark:hover:text-myGray2transition-colors duration-300"
+              className="text-xs text-myBlack cursor-pointer mt-2 mb-8 hover:text-myGray2 dark:text-myWhite  dark:hover:text-myGray2 transition-colors duration-300"
             >
               {t("login.forgotPassword")}
             </button>

@@ -73,20 +73,36 @@ const normalizeMessage = (message) => {
   );
 
   // Envoyer un message texte
-  const sendMessage = useCallback(
-    async (content) => {
-      if (!conversationId || !content.trim()) return;
+      const sendMessage = useCallback(
+    async (input) => {
+      if (!conversationId) return;
+
+      let content = "";
+      let Id_receiver = null;
+
+      // Cas 1 : on reçoit une string (ancienne façon)
+      if (typeof input === "string") {
+        content = input.trim();
+        if (!content) return;
+      }
+      // Cas 2 : on reçoit un objet (nouvelle façon avec Id_receiver)
+      else if (typeof input === "object" && input !== null) {
+        content = input.content?.trim();
+        Id_receiver = input.Id_receiver;
+        if (!content) return;
+      } else {
+        return;
+      }
 
       try {
-        console.log("📨 Envoi message:", content);
+        console.log("📨 Envoi message:", { content, Id_receiver, conversationId });
 
         socketService.sendMessage({
           conversationId,
-          content: content.trim(),
+          content,
           typeMessage: "text",
+          Id_receiver, // ← ENVOYÉ AU BACKEND
         });
-
-        // Le message sera ajouté via 'new_message' ou 'message_sent'
       } catch (err) {
         console.error("❌ Erreur envoi message:", err);
         throw err;
@@ -192,6 +208,18 @@ const normalizeMessage = (message) => {
       // L’UI sera mise à jour via 'message:pinned' / 'message:unpinned'
     } catch (err) {
       console.error("❌ Erreur épinglage:", err);
+      throw err;
+    }
+  }, []);
+
+    // Désépingler un message
+  const unpinMessage = useCallback(async (messageId) => {
+    try {
+      await messageService.unpinMessage(messageId);
+      console.log("📌 Requête désépinglage envoyée:", messageId);
+      // L’UI sera mise à jour via socket 'message:unpinned'
+    } catch (err) {
+      console.error("❌ Erreur désépinglage:", err);
       throw err;
     }
   }, []);
@@ -338,6 +366,7 @@ const normalizeMessage = (message) => {
     sendFile,
     loadMore,
     pinMessage,
+    unpinMessage,
     deleteMessage,
     forwardMessage,
     refresh: () => loadMessages(1),

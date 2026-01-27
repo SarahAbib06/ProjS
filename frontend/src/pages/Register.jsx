@@ -9,7 +9,7 @@ import Checkbox from "../components/Chekbox.jsx";
 import Button from "../components/Button.jsx";
 import LanguageToggle from"../components/LanguageToggle.jsx";
 import { useTranslation } from "react-i18next";
-
+import MessagesPage from "../pages/MessagesPage.jsx";
 const Register = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ const Register = () => {
         state: { 
           email: formData.email,
           type: 'register',
-          redirectTo: '/login' // Redirige vers login après OTP
+          redirectTo: '/MessagesPage' // Redirige vers login après OTP
         } 
       });
     } catch (err) {
@@ -74,7 +74,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-myGray3 relative px-4">
+    <div className="min-h-screen bg-myGray3 dark:bg-black relative px-4">
       <div className="flex justify-center items-center min-h-screen">
         <FormCard
           title={t("register.createAccount")}

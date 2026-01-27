@@ -69,7 +69,7 @@ const OtpPage = () => {
         // Vérification OTP pour inscription
         await verifyOtp(email, otpCode);
         setSuccess(t("otp.success") || "Compte créé avec succès !");
-        setTimeout(() => navigate(redirectTo), 1500); // Redirige vers login
+        setTimeout(() => navigate("/profil-pic", { state: { email } }), 1500); // Redirige vers login
       } else if (type === 'inactivity') {
         // Vérification OTP pour inactivité
         await verifyInactivityOtp(token, otpCode);
@@ -100,7 +100,7 @@ const OtpPage = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-myGray3 px-3 sm:px-6 relative">
+    <div className="flex justify-center items-center min-h-screen bg-myGray3 dark:bg-black px-3 sm:px-6 relative">
       <FormCard topRight={<LanguageToggle />}>
         <div className="flex flex-col justify-center w-full h-auto md:h-[182px] mt-6 sm:mt-6 md:mt-16 text-center px-2 sm:px-0">
           <h1 className="text-lg sm:text-xl font-bold">

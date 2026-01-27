@@ -3,11 +3,13 @@ import winSound from "../assets/audio/win.wav";
 import errorSound from "../assets/audio/error.wav";
 import clickSound from "../assets/audio/click.mp3";
 import { useNavigate } from "react-router-dom";
-
+import { IoArrowBackOutline } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 export default function GuessNumberGame() {
+  const { t } = useTranslation();
   const [targetNumber, setTargetNumber] = useState(0);
   const [guess, setGuess] = useState("");
-  const [message, setMessage] = useState("🎯 Devine le nombre entre 1 et 100 !");
+  const [message, setMessage] = useState("");
   const [attempts, setAttempts] = useState(0);
  
   const [gameWon, setGameWon] = useState(false);
@@ -29,7 +31,7 @@ const navigate = useNavigate();
     const random = Math.floor(Math.random() * difficulty) + 1;
     setTargetNumber(random);
     setGuess("");
-    setMessage(`🎯 Devine le nombre entre 1 et ${difficulty} !`);
+   setMessage(t("guessNumber.startMessage", { max: difficulty }));
     setAttempts(0);
     setGameWon(false);
     setHistory([]);
@@ -41,7 +43,8 @@ const navigate = useNavigate();
     const random = Math.floor(Math.random() * level) + 1;
     setTargetNumber(random);
     setGuess("");
-    setMessage(`🎯 Devine le nombre entre 1 et ${level} !`);
+    setMessage(t("guessNumber.startMessage", { max: level }));
+
     setAttempts(0);
     setGameWon(false);
     setHistory([]);
@@ -53,7 +56,8 @@ const navigate = useNavigate();
     const userGuess = parseInt(guess);
 
     if (!userGuess || userGuess < 1 || userGuess > difficulty) {
-      setMessage(`❌ Entre un nombre entre 1 et ${difficulty} !`);
+      setMessage(t("guessNumber.invalid", { max: difficulty }));
+
       if (errorAudio.current) errorAudio.current.play();
       return;
     }
@@ -66,7 +70,8 @@ const navigate = useNavigate();
 
     if (userGuess === targetNumber) {
       setGameWon(true);
-      setMessage(`🎉 BRAVO ! Tu as trouvé en ${newAttempts} tentative${newAttempts > 1 ? 's' : ''} !`);
+     setMessage(t("guessNumber.win", { count: newAttempts }));
+
       if (winAudio.current) winAudio.current.play();
 
       
@@ -74,13 +79,13 @@ const navigate = useNavigate();
       const distance = Math.abs(userGuess - targetNumber);
       let hint = "";
 
-      if (distance <= 5) hint = "🔥 BRÛLANT !";
-      else if (distance <= 10) hint = "🌡️ Chaud !";
-      else if (distance <= 20) hint = "😐 Tiède";
-      else hint = "❄️ Froid";
+      if (distance <= 5)hint = t("guessNumber.hot");
+      else if (distance <= 10) hint = t("guessNumber.cool");
+      else if (distance <= 20) hint = t("guessNumber.cold");
+      else hint = t("guessNumber.cold");
 
-      if (userGuess < targetNumber) setMessage(`${hint} 📈 C'est plus HAUT !`);
-      else setMessage(`${hint} 📉 C'est plus BAS !`);
+      if (userGuess < targetNumber)  setMessage(`${hint} 📈 ${t("guessNumber.higher")}`);
+      else  setMessage(`${hint} 📉 ${t("guessNumber.lower")}`);
     }
 
     setGuess("");
@@ -93,24 +98,29 @@ const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gradient-to-br from-myYellow via-myYellow2 to-myGray2 flex items-center justify-center p-2 sm:p-4">
          {/* Boutons de contrôle avec Retour */}
-     <button
+     {/* Bouton de retour fixe */}
+{/* Bouton retour identique à MemoryGame */}
+<button
   onClick={() => navigate("/games")}
-  style={{
-    position: "absolute",
-    top: "20px",
-    left: "20px",
-    padding: "10px 20px",
-    backgroundColor: "#555",
-    color: "#fff",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "bold",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
-  }}
+  className="
+    fixed
+    left-25
+    -top-0 md:top-2 
+    
+    z-50
+    p-3
+    bg-black text-yellow-400
+    rounded-full
+    shadow-lg
+    hover:bg-gray-800 hover:text-yellow-300
+    transition
+    flex items-center justify-center
+    cursor-pointer
+  "
 >
-  ← Retour
+  <IoArrowBackOutline className="text-2xl sm:text-3xl" />
 </button>
+
 
       <audio ref={clickAudio} src={clickSound} />
       <audio ref={winAudio} src={winSound} />
@@ -119,7 +129,7 @@ const navigate = useNavigate();
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-md w-full">
         {/* Titre */}
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-2 sm:mb-4 bg-gradient-to-r from-myYellow to-gray-800 bg-clip-text text-transparent">
-          Devine le Nombre
+         {t("guessNumber.title")}
         </h1>
 
       
@@ -134,7 +144,7 @@ const navigate = useNavigate();
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
-            😊 Facile
+            😊 {t("guessNumber.easy")}
           </button>
           <button
             onClick={() => changeDifficulty(100)}
@@ -144,7 +154,7 @@ const navigate = useNavigate();
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
-            😎 Moyen
+            😎 {t("guessNumber.medium")}
           </button>
           <button
             onClick={() => changeDifficulty(500)}
@@ -154,7 +164,7 @@ const navigate = useNavigate();
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
-            🔥 Difficile
+            🔥 {t("guessNumber.hard")}
           </button>
         </div>
 
@@ -169,7 +179,7 @@ const navigate = useNavigate();
 
         {/* Nombre de tentatives */}
         <p className="text-center text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">
-          📊 Tentatives : <span className="font-bold text-myYellow">{attempts}</span>
+          📊 {t("guessNumber.attempts")} : <span className="font-bold text-myYellow">{attempts}</span>
         </p>
 
         {/* Input et bouton */}
@@ -180,7 +190,7 @@ const navigate = useNavigate();
               value={guess}
               onChange={(e) => setGuess(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ton nombre..."
+              placeholder={t("guessNumber.placeholder")}
               className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:border-purple-500 text-base sm:text-lg"
               min="1"
               max={difficulty}
@@ -189,7 +199,7 @@ const navigate = useNavigate();
               onClick={checkGuess}
               className="bg-gradient-to-r from-myYellow to-gray-600 text-white px-6 py-2 sm:py-3 rounded-lg font-bold hover:from-myYellow hover:to-gray-600 transition-all transform hover:scale-105 text-base sm:text-lg"
             >
-              GO !
+            {t("guessNumber.go")}
             </button>
           </div>
         )}
@@ -200,14 +210,15 @@ const navigate = useNavigate();
             onClick={startNewGame}
             className="w-full bg-gradient-to-r from-green-500 to-myYellow2 text-white py-2 sm:py-3 rounded-lg font-bold hover:from-green-600 hover:to-myYellow2 transition-all transform hover:scale-105 mb-4 sm:mb-6 text-base sm:text-lg"
           >
-            Rejouer
+           {t("guessNumber.replay")}
           </button>
         )}
 
         {/* Historique */}
         {history.length > 0 && (
           <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-sm font-semibold text-gray-700 mb-2">📝 Tes tentatives :</p>
+            <p className="text-sm font-semibold text-gray-700 mb-2">📝 {t("guessNumber.history")}
+</p>
             <div className="flex flex-wrap gap-2">
               {history.map((h, i) => (
                 <span

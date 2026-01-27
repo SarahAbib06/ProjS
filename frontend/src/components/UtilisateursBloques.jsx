@@ -1,14 +1,48 @@
 import { FaArrowLeft, FaUserSlash } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { relationService } from "../services/relationService";
 import UnblockUserModal from "../components/UnblockUserModal.jsx";
+
 export default function UtilisateursBloques({ setPrivacySubPage }) {
   const { t } = useTranslation();
- const [blockedUsers, setBlockedUsers] = useState([]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const containerVariants = {
+    hidden: { opacity: 0, y: 100 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 160,
+        damping: 25,
+        staggerChildren: 0.1,
+      },
+    },
+    exit: {
+      opacity: 0,
+      y: 100,
+      transition: { duration: 0.5 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 400,
+        damping: 25,
+      },
+    },
+  };
 
   // Charger la liste
   useEffect(() => {
@@ -30,7 +64,6 @@ const [selectedUser, setSelectedUser] = useState(null);
   const handleUnblock = async (contactId) => {
     try {
       await relationService.unblockUser(contactId);
-      // Retirer de la liste localement
       setBlockedUsers(prev => prev.filter(u => u.contactId._id !== contactId));
     } catch (err) {
       console.error("Erreur lors du déblocage:", err);
@@ -38,7 +71,11 @@ const [selectedUser, setSelectedUser] = useState(null);
   };
 
   return (
-    <div
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      variants={containerVariants}
       className="
         w-full bg-myGray4 dark:bg-mydarkGray3
         rounded-xl shadow-md 
@@ -48,71 +85,99 @@ const [selectedUser, setSelectedUser] = useState(null);
       "
     >
       {/* TITRE + RETOUR */}
-      <div className="flex items-center gap-3 mb-6">
-        <FaArrowLeft
-           onClick={() => setPrivacySubPage(null)}
-          className="w-5 h-5 cursor-pointer text-myBlack dark:text-white"
-        />
-        <h1 className="text-xl font-semibold text-myBlack dark:text-white">
-          {t("privacy.BlockedUsersTitle")}
-        </h1>
+      <div variants={itemVariants} className="mb-6">
+        <div className="flex items-center gap-3">
+          <div>
+            <FaArrowLeft
+              onClick={() => setPrivacySubPage(null)}
+              className="w-5 h-5 cursor-pointer text-myBlack dark:text-white"
+            />
+          </div>
+          <h1 className="text-xl font-semibold text-myBlack dark:text-white">
+            {t("privacy.BlockedUsersTitle")}
+          </h1>
+        </div>
       </div>
+
       {/* LOADING */}
       {loading && (
-        <div className="text-center text-gray-500 mt-10">
+        <div 
+          variants={itemVariants}
+          className="text-center text-gray-500 dark:text-gray-400 mt-10 font-medium"
+        >
           Chargement...
         </div>
       )}
 
-      {/* CONTENU */}
-      {!loading && blockedUsers.length === 0 &&(
-        <div className="flex flex-col items-center justify-center mt-16 text-center gap-4">
-          {/* Icône avec background plus grand et coins arrondis */}
-          <div className="bg-myYellow w-20 h-20 flex items-center justify-center rounded-lg">
-            <FaUserSlash className="text-black w-10 h-10" />
+      {/* CONTENU VIDE */}
+      {!loading && blockedUsers.length === 0 && (
+        <div 
+          variants={itemVariants}
+          className="flex flex-col items-center justify-center mt-16 text-center gap-6 flex-1"
+        >
+          <div 
+            whileHover={{ scale: 1.05 }}
+            className="bg-myYellow w-24 h-24 flex items-center justify-center rounded-2xl shadow-lg border border-myYellow/30"
+          >
+            <FaUserSlash className="text-myBlack w-12 h-12" />
           </div>
 
-          {/* Texte */}
-          <span className="text-gray-500 text-sm font-semibold">
+          <span 
+            variants={itemVariants}
+            className="text-gray-600 dark:text-gray-300 text-lg font-bold"
+          >
             {t("privacy.NoBlockedUsers")}
           </span>
-          <span className="text-gray-400 text-xs mt-1 line-clamp-2">
+          <span 
+            variants={itemVariants}
+            className="text-gray-500 dark:text-gray-400 text-sm max-w-xs line-clamp-2"
+          >
             {t("privacy.BlockedUsersDescription")}
           </span>
         </div>
-      ) } 
-        {!loading && blockedUsers.length > 0 && (
-        <div className="flex flex-col gap-4">
-          {blockedUsers.map((item) => {
+      )} 
+
+      {/* LISTE UTILISATEURS */}
+      {!loading && blockedUsers.length > 0 && (
+        <div 
+          variants={itemVariants}
+          className="flex flex-col gap-4"
+        >
+          {blockedUsers.map((item, index) => {
             const user = item.contactId;
 
             return (
               <div
                 key={item._id}
-                className="flex items-center justify-between border-b border-gray-300 dark:border-gray-700 pb-3"
+                variants={itemVariants}
+                custom={index}
+                className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-[#2E2F2F] border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
               >
-                {/* profil */}
+                {/* Profil */}
                 <div className="flex items-center gap-3">
                   <img
+                    whileHover={{ scale: 1.05 }}
                     src={user.profilePicture || "/default-avatar.png"}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="w-12 h-12 rounded-xl object-cover ring-2 ring-gray-200 dark:ring-gray-700 shadow-md"
                     alt="user"
                   />
-                  <span className="text-sm text-myBlack dark:text-gray-300 font-medium">
+                  <span 
+                    whileHover={{ x: 2 }}
+                    className="text-sm font-semibold text-myBlack dark:text-gray-200"
+                  >
                     {user.username}
                   </span>
                 </div>
 
-                {/* bouton débloquer */}
+                {/* Bouton débloquer */}
                 <button
-                 
-                  
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => {
-                              setSelectedUser(user);
-                               setShowModal(true);
+                    setSelectedUser(user);
+                    setShowModal(true);
                   }}
-
-                  className="text-red-500 text-sm hover:underline"
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-red-400"
                 >
                   {t("privacy.Unblock")}
                 </button>
@@ -121,17 +186,16 @@ const [selectedUser, setSelectedUser] = useState(null);
           })}
         </div>
       )}
-      <UnblockUserModal
-  isOpen={showModal}
-  onClose={() => setShowModal(false)}
-  user={selectedUser}
-  onConfirm={() => {
-    handleUnblock(selectedUser._id);
-    setShowModal(false);
-  }}
-/>
 
-    </div>
-    
+      <UnblockUserModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        user={selectedUser}
+        onConfirm={() => {
+          handleUnblock(selectedUser._id);
+          setShowModal(false);
+        }}
+      />
+    </motion.div>
   );
 }

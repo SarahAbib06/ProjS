@@ -43,9 +43,13 @@ updateUsername: async (newUsername) => {
   },
      // 4. Supprimer le compte
   deleteAccount: async (password) => {
+  try {
     const response = await api.post("/auth/delete-account", { password });
     return response.data;
-  },
+  } catch (error) {
+    throw error.response?.data || { message: "Erreur serveur" };
+  }
+},
 
 
    deleteProfilePicture: async () => {

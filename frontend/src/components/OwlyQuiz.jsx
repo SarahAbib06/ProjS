@@ -1,19 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import clickSound from "../assets/sounds/click.wav";
 import winSound from "../assets/sounds/win.wav";
 import loseSound from "../assets/sounds/lose.wav";
+import { IoArrowBackOutline } from "react-icons/io5";
+
+import { useTranslation } from "react-i18next";
 
 const OWLY_IMAGE = "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=600&q=60";
 const MEMORY_ICONS = ["🌿", "🌸", "⭐", "🐦"];
-const STORY_PARAGRAPHS = [
-  "Owly est né au cœur de la forêt d'Early, sous les étoiles. Dès son plus jeune âge, il montra une curiosité insatiable pour les mystères de la nature et les secrets des anciens arbres majestueux qui peuplaient la forêt. Son premier objectif fut d'apprendre à connaître les sons de la forêt et à identifier chaque créature par ses chants.",
-  "Après le premier triomphe, Owly comprit que la forêt avait une logique et un ordre subtil. Il réalisa que chaque chemin, chaque rivière et chaque arbre avait un rôle précis dans l'écosystème. Ses nouvelles aventures lui apprirent l'importance de l'observation attentive et de la patience.",
-  "Les épreuves suivantes apprirent à Owly la patience et la mémoire. Il devait se souvenir des séquences des fleurs, des chants des oiseaux, et des couleurs des feuilles à travers les saisons. Chaque succès renforçait sa confiance et sa compréhension de l'environnement qui l'entourait.",
-  "Avant le dernier défi, Owly rencontra des créatures fantastiques. Chacune lui enseigna une leçon unique sur le courage, la logique et la créativité. Il devait utiliser toutes ces compétences combinées pour résoudre des énigmes complexes et naviguer à travers les labyrinthes de la forêt.",
-  "Enfin, Owly découvrit la clairière des sages, un lieu mystique où la lumière filtrait à travers un dôme de feuilles scintillantes. Ici, il comprit la valeur de la sagesse, du partage et de la curiosité. Son parcours le transforma profondément et il était désormais prêt à transmettre ses connaissances."
-];
+
+
+
 
 const PUZZLE_PIECES = [
   { id: 0, order: 0 },
@@ -24,17 +23,9 @@ const PUZZLE_PIECES = [
   { id: 5, order: 5 }
 ];
 
-const btnStyle = {
-  padding: "10px 20px",
-  borderRadius: 10,
-  background: "#ffd54f",
-  border: "none",
-  cursor: "pointer",
-  fontWeight: "700",
-  fontSize: 16
-};
-
 function playSound(sound) {
+    
+
   try { const a = new Audio(sound); a.volume = 0.75; a.play().catch(()=>{}); } catch(e){}
 }
 
@@ -59,6 +50,9 @@ function pieceBgPos(idx){
 }
 
 export default function OwlyQuiz(){
+  const { t } = useTranslation();
+   const STORY_PARAGRAPHS = t("owlyQuiz.story", { returnObjects: true });
+const STORY_SUMMARY = t("owlyQuiz.storySummary", { returnObjects: true });
   const navigate = useNavigate();
   const [stage,setStage]=useState("intro");
   const [storyIndex,setStoryIndex]=useState(0);
@@ -82,7 +76,7 @@ export default function OwlyQuiz(){
   const [obsOptions,setObsOptions] = useState([]);
   const [showGrid,setShowGrid] = useState(true);
 
-  const [finalQues,setFinalQues]=useState({question:"Quel est le message final ?",options:["Gagner","Apprendre","Protéger","Dormir"],correct:2});
+  const [finalQues,setFinalQues]=useState({question:"Que symbolise Owly dans l’histoire ?",options:["Pouvoir", "Connexion", "Richesse", "Secret"],correct:2});
 
   const [windowWidth,setWindowWidth] = useState(window.innerWidth);
 
@@ -172,7 +166,11 @@ export default function OwlyQuiz(){
     }
 
     if(type==="finalPuzzle"){
-      setFinalQues({question:"Quel est le message final ?",options:shuffleArray(["Gagner","Apprendre","Protéger","Dormir"]),correct:2});
+       setFinalQues({
+    question: t("owlyQuiz.final.question"),
+    options: shuffleArray(t("owlyQuiz.final.options", { returnObjects: true })),
+    correct: 2
+  });
     }
 
     setStage("challenge");
@@ -208,13 +206,18 @@ export default function OwlyQuiz(){
     if(i===finalQues.correct) onWin(); else onFail();
   };
 
-  const onWin=()=>{
-    playSound(winSound);
-    if(timerRef.current) clearInterval(timerRef.current);
-    setStage("story");
-    setStoryIndex(prev=>prev+1);
-  };
+ const onWin = () => {
+  playSound(winSound);
+  if (timerRef.current) clearInterval(timerRef.current);
 
+  // Si c’est le dernier paragraphe
+  if (storyIndex + 1 >= STORY_PARAGRAPHS.length) {
+    setStage("finished");
+  } else {
+    setStage("story");
+    setStoryIndex(prev => prev + 1);
+  }
+};
   const onFail=()=>{
     playSound(loseSound);
     if(timerRef.current) clearInterval(timerRef.current);
@@ -224,141 +227,424 @@ export default function OwlyQuiz(){
   const nextStage=()=>{ if(storyIndex>=STORY_PARAGRAPHS.length) setStage("finished"); else startChallenge(); };
   const resetGame=()=>{ setStage("intro"); setStoryIndex(0); };
 
-  return(
-    <div style={{minHeight:"100vh",backgroundColor:"#FFFF99",padding:20,color:"#000",display:"flex",flexDirection:"column",alignItems:"center"}}>
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { duration: 0.5, staggerChildren: 0.1 }
+    },
+    exit: { opacity: 0, transition: { duration: 0.3 } }
+  };
 
-      {/* BOUTON RETOUR */}
-      <div style={{width:"100%", maxWidth:720, display:"flex", justifyContent:"flex-start"}}>
-       <button
-  onClick={() => navigate("/games")}
-  style={{
-    position: "absolute",
-    top: "20px",
-    left: "20px",
-    padding: "10px 20px",
-    borderRadius: 10,
-    background: "#ffd54f",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "700",
-    fontSize: 16,
-    boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
-    zIndex: 1000
-  }}
->
-  ⬅ Retour
-</button>
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
+    }
+  };
+
+  return(
+    <div className="min-h-screen bg-[#FFFF99] p-4 sm:p-6 lg:p-8 text-black flex flex-col items-center relative overflow-hidden">
+      
+      {/* Fond animé */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.05, 0.1, 0.05]
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-amber-600 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            scale: [1.2, 1, 1.2],
+            opacity: [0.05, 0.1, 0.05]
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-amber-500 rounded-full blur-3xl"
+        />
       </div>
 
-      <motion.h1 initial={{y:-50,opacity:0}} animate={{y:0,opacity:1}} style={{fontSize:"3rem"}}>🦉 Owly Quiz 🦉</motion.h1>
+      {/* Bouton retour */}
+      <motion.button
+        onClick={() => navigate("/games")}
+        whileTap={{ scale: 0.95 }}
+        className="
+          fixed top-4 left-4 z-50
+          px-4 sm:px-6 py-2 sm:py-3
+          bg-[#ffd54f] rounded-xl
+          font-bold text-sm sm:text-base
+          shadow-lg shadow-black/20
+          hover:shadow-xl hover:shadow-black/30
+          transition-all duration-300
+        "
+      >
+        ⬅ Retour
+      </motion.button>
+
+      {/* Titre */}
+      <motion.h1 
+        initial={{ y: -50, opacity: 0 }} 
+        animate={{ y: 0, opacity: 1 }}
+        className="text-4xl sm:text-5xl lg:text-6xl font-bold mt-16 mb-8 text-center relative z-10"
+      >
+        <motion.span
+          animate={{
+            rotate: [0, -10, 10, 0]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            repeatDelay: 3
+          }}
+          className="inline-block"
+        >
+          🦉
+        </motion.span>
+        {" "}Owly Quiz{" "}
+        <motion.span
+          animate={{
+            rotate: [0, 10, -10, 0]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            repeatDelay: 3
+          }}
+          className="inline-block"
+        >
+          🦉
+        </motion.span>
+      </motion.h1>
 
       {/* INTRO */}
-      {stage==="intro" && <div style={{maxWidth:720,textAlign:"center",marginTop:40,padding:20,background:"#fff",borderRadius:12}}>
-        <p>Ce jeu raconte l'histoire d'Owly. Pour la découvrir, réussis chaque défi.</p>
-        <button onClick={startChallenge} style={btnStyle}>Start</button>
-      </div>}
-
-      {/* PUZZLE */}
-      {stage==="challenge" && challengeType==="puzzle" && <div style={{marginTop:30}}>
-        <h2>Puzzle — reconstitue l'image</h2>
-        <p>Timer : {timer}s</p>
-        <div style={{
-          display:"grid",
-          gridTemplateColumns:`repeat(3, ${getPuzzleSize()}px)`,
-          gridTemplateRows:`repeat(2, ${getPuzzleSize()}px)`,
-          gap:6,
-          marginTop:20,
-          justifyContent:"center"
-        }}>
-          {pieces.map((p,idx)=>
-            <div key={p.id} onClick={()=>onPieceClick(idx)}
-              style={{
-                width:getPuzzleSize(),
-                height:getPuzzleSize(),
-                cursor:"pointer",
-                border:selected===idx?"3px solid #ffd54f":"2px solid #000",
-                borderRadius:6,
-                backgroundImage:`url(${OWLY_IMAGE})`,
-                backgroundSize:"300% 200%",
-                backgroundPosition:pieceBgPos(p.order)
-              }}/>
-          )}
-        </div>
-      </div>}
-
-      {/* MEMORY */}
-      {stage==="challenge" && challengeType==="memory" && <div style={{textAlign:"center",marginTop:30}}>
-        <h2>Défi mémoire</h2>
-        <div style={{fontSize:32,marginBottom:10}}>
-          {playerSeq.length>0 ? playerSeq.map(s=>s) : memorySeq.map(()=> "❓")}
-        </div>
-        <div>
-          {memoryButtons.map((s,i)=><button key={i} onClick={()=>onMemoryClick(s)} style={btnStyle}>{s}</button>)}
-        </div>
-      </div>}
-
-      {/* CUPS */}
-      {stage==="challenge" && challengeType==="cups" && <div style={{textAlign:"center",marginTop:30}}>
-        <h2>Défi rapidité & logique — Trouve la boule !</h2>
-        <div style={{display:"flex",gap:20,justifyContent:"center",marginTop:20}}>
-          {cups.map((c,i)=>
-            <div key={i} onClick={()=>onCupClick(i)}
-              style={{width:getPuzzleSize(),height:getPuzzleSize(),borderRadius:10,backgroundColor:"#fff",border:"2px solid #000",display:"flex",justifyContent:"center",alignItems:"center",cursor:"pointer"}}>
-                {ballVisible && c ? "⚪" : ""}
-            </div>
-          )}
-        </div>
-      </div>}
-
-      {/* OBSERVATION VISUELLE */}
-      {stage==="challenge" && challengeType==="obsChallenge" && <div style={{textAlign:"center",marginTop:30}}>
-        <h2>Défi d'observation visuelle</h2>
-        {showGrid ? (
-          <div style={{display:"grid",gridTemplateColumns:`repeat(2, ${getPuzzleSize()}px)`,gap:10,justifyContent:"center",marginTop:20}}>
-            {obsGrid.map((icon,i)=><div key={i} style={{width:getPuzzleSize(),height:getPuzzleSize(),fontSize:getPuzzleSize()/2,display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid #000",borderRadius:8}}>{icon}</div>)}
+      <AnimatePresence mode="wait">
+        {stage === "intro" && (
+          <div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="max-w-2xl w-full text-center mt-8 p-6 sm:p-8 bg-white rounded-2xl shadow-2xl relative z-10"
+          >
+            <p variants={itemVariants} className="text-base sm:text-lg mb-6 leading-relaxed">
+              Ce jeu raconte l'histoire d'Owly. Pour la découvrir, réussis chaque défi.
+            </p>
+            <button 
+              variants={itemVariants}
+              onClick={startChallenge}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-3 rounded-xl bg-[#ffd54f] border-none font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              Commencer l'aventure
+            </button>
           </div>
-        ) : (
-          <>
-            <p>Quel symbole était à la position {obsQuestion.index + 1} ?</p>
-            <div style={{display:"flex",gap:10,justifyContent:"center",marginTop:20}}>
-              {obsOptions.map((icon,i)=>
-                <button key={i} onClick={()=>{if(icon===obsQuestion.icon) onWin(); else onFail();}} style={btnStyle}>{icon}</button>
-              )}
-            </div>
-          </>
         )}
-      </div>}
 
-      {/* FINAL */}
-      {stage==="challenge" && challengeType==="finalPuzzle" && <div style={{textAlign:"center",marginTop:30}}>
-        <h2>Question finale</h2>
-        <p>{finalQues.question}</p>
-        <div style={{display:"flex",gap:10,justifyContent:"center",marginTop:20}}>
-          {finalQues.options.map((opt,i)=><button key={i} onClick={()=>onFinalClick(i)} style={btnStyle}>{opt}</button>)}
-        </div>
-      </div>}
+        {/* PUZZLE */}
+        {stage === "challenge" && challengeType === "puzzle" && (
+          <div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="mt-8 relative z-10 w-full flex flex-col items-center"
+          >
+            <div variants={itemVariants} className="text-center mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3">Puzzle — reconstitue l'image</h2>
+              <div 
+                className="inline-block px-6 py-2 bg-white rounded-full shadow-lg"
+                animate={{
+                  scale: timer <= 5 ? [1, 1.1, 1] : 1
+                }}
+                transition={{
+                  duration: 0.5,
+                  repeat: timer <= 5 ? Infinity : 0
+                }}
+              >
+                <span className={`text-2xl font-bold ${timer <= 5 ? 'text-red-600' : 'text-black'}`}>
+                  ⏱️ {timer}s
+                </span>
+              </div>
+            </div>
+            
+            <div 
+              variants={itemVariants}
+              className="grid gap-2 sm:gap-3"
+              style={{
+                gridTemplateColumns: `repeat(3, ${getPuzzleSize()}px)`,
+                gridTemplateRows: `repeat(2, ${getPuzzleSize()}px)`
+              }}
+            >
+              {pieces.map((p, idx) => (
+                <div
+                  key={p.id}
+                  onClick={() => onPieceClick(idx)}
+                  whileTap={{ scale: 0.95 }}
+                  className={`
+                    cursor-pointer rounded-lg
+                    ${selected === idx ? 'ring-4 ring-[#ffd54f]' : 'ring-2 ring-black'}
+                  `}
+                  style={{
+                    width: getPuzzleSize(),
+                    height: getPuzzleSize(),
+                    backgroundImage: `url(${OWLY_IMAGE})`,
+                    backgroundSize: "300% 200%",
+                    backgroundPosition: pieceBgPos(p.order)
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
-      {/* STORY */}
-      {stage==="story" && <div style={{maxWidth:720,marginTop:40,padding:20,background:"#fff",borderRadius:12}}>
-        <p style={{lineHeight:"1.6rem", fontSize:"1.1rem"}}>{STORY_PARAGRAPHS[storyIndex-1]}</p>
-        <button onClick={nextStage} style={{...btnStyle,marginTop:20}}>Prochain défi</button>
-      </div>}
+        {/* MEMORY */}
+        {stage === "challenge" && challengeType === "memory" && (
+          <div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="text-center mt-8 relative z-10 w-full max-w-2xl px-4"
+          >
+            <h2 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-6">
+              Défi mémoire
+            </h2>
+            <div variants={itemVariants} className="text-4xl sm:text-5xl mb-8 bg-white p-6 rounded-2xl shadow-xl">
+              {playerSeq.length > 0 ? playerSeq.join(" ") : memorySeq.map(() => "❓").join(" ")}
+            </div>
+            <div variants={itemVariants} className="flex flex-wrap gap-3 sm:gap-4 justify-center">
+              {memoryButtons.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => onMemoryClick(s)}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-6 sm:px-8 py-3 sm:py-4 text-3xl sm:text-4xl rounded-xl bg-[#ffd54f] shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-      {/* LOST */}
-      {stage==="lost" && <div style={{maxWidth:720,marginTop:40,padding:20,background:"#fff",borderRadius:12,textAlign:"center"}}>
-        <h2>💥 Game Over</h2>
-        <p>Tu as échoué. Réessaye pour continuer l'histoire d'Owly.</p>
-        <button onClick={startChallenge} style={btnStyle}>🔁 Réessayer ce défi</button>
-        <button onClick={resetGame} style={btnStyle}>Recommencer le jeu</button>
-      </div>}
+        {/* CUPS */}
+        {stage === "challenge" && challengeType === "cups" && (
+          <div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="text-center mt-8 relative z-10 w-full max-w-2xl px-4"
+          >
+            <h2 variants={itemVariants} className="text-xl sm:text-2xl lg:text-3xl font-bold mb-8">
+              Défi rapidité & logique — Trouve la boule !
+            </h2>
+            <div variants={itemVariants} className="flex gap-4 sm:gap-6 justify-center">
+              {cups.map((c, i) => (
+                <div
+                  key={i}
+                  onClick={() => onCupClick(i)}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-white rounded-2xl border-4 border-black flex items-center justify-center cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-300 text-3xl sm:text-4xl"
+                  style={{
+                    width: getPuzzleSize(),
+                    height: getPuzzleSize()
+                  }}
+                >
+                  {ballVisible && c ? "⚪" : ""}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-      {/* FIN */}
-      {stage==="finished" && <div style={{maxWidth:720,marginTop:40,padding:20,background:"#fff",borderRadius:12}}>
-        <h2>🎉 Histoire complète d'Owly 🎉</h2>
-        {STORY_PARAGRAPHS.map((p,i)=><p key={i} style={{lineHeight:"1.6rem", fontSize:"1.1rem"}}>{p}</p>)}
-        <button onClick={resetGame} style={{...btnStyle,marginTop:20}}>Rejouer</button>
-      </div>}
+        {/* OBSERVATION */}
+        {stage === "challenge" && challengeType === "obsChallenge" && (
+          <div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="text-center mt-8 relative z-10 w-full max-w-2xl px-4"
+          >
+            <h2 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-8">
+              Défi d'observation visuelle
+            </h2>
+            {showGrid ? (
+              <div 
+                variants={itemVariants}
+                className="grid gap-3 sm:gap-4 justify-center"
+                style={{
+                  gridTemplateColumns: `repeat(2, ${getPuzzleSize()}px)`
+                }}
+              >
+                {obsGrid.map((icon, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl border-4 border-black flex items-center justify-center shadow-xl"
+                    style={{
+                      width: getPuzzleSize(),
+                      height: getPuzzleSize(),
+                      fontSize: getPuzzleSize() / 2
+                    }}
+                  >
+                    {icon}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                <p variants={itemVariants} className="text-lg sm:text-xl mb-6 bg-white p-4 rounded-xl shadow-lg">
+                  Quel symbole était à la position {obsQuestion.index + 1} ?
+                </p>
+                <div variants={itemVariants} className="flex flex-wrap gap-3 sm:gap-4 justify-center">
+                  {obsOptions.map((icon, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { if (icon === obsQuestion.icon) onWin(); else onFail(); }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-6 sm:px-8 py-3 sm:py-4 text-3xl sm:text-4xl rounded-xl bg-[#ffd54f] shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
+        {/* FINAL */}
+        {stage === "challenge" && challengeType === "finalPuzzle" && (
+          <div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="text-center mt-8 relative z-10 w-full max-w-2xl px-4"
+          >
+            <h2 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-6">
+              Question finale
+            </h2>
+            <p variants={itemVariants} className="text-lg sm:text-xl mb-8 bg-white p-6 rounded-2xl shadow-xl">
+              {finalQues.question}
+            </p>
+            <div variants={itemVariants} className="flex flex-wrap gap-3 sm:gap-4 justify-center">
+              {finalQues.options.map((opt, i) => (
+                <button
+                  key={i}
+                  onClick={() => onFinalClick(i)}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-[#ffd54f] font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* STORY */}
+        {stage === "story" && (
+          <div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="max-w-2xl w-full mt-8 p-6 sm:p-8 bg-white rounded-2xl shadow-2xl relative z-10"
+          >
+            <p variants={itemVariants} className="leading-7 text-base sm:text-lg mb-6">
+              {STORY_PARAGRAPHS[storyIndex - 1]}
+            </p>
+            <button
+              variants={itemVariants}
+              onClick={nextStage}
+              whileTap={{ scale: 0.95 }}
+              className="w-full sm:w-auto px-8 py-3 rounded-xl bg-[#ffd54f] font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              Prochain défi →
+            </button>
+          </div>
+        )}
+
+        {/* LOST */}
+        {stage === "lost" && (
+          <div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="max-w-2xl w-full mt-8 p-6 sm:p-8 bg-white rounded-2xl shadow-2xl text-center relative z-10"
+          >
+            <h2 variants={itemVariants} className="text-3xl sm:text-4xl font-bold mb-4">
+              💥 Game Over
+            </h2>
+            <p variants={itemVariants} className="text-base sm:text-lg mb-6">
+              Tu as échoué. Réessaye pour continuer l'histoire d'Owly.
+            </p>
+            <div variants={itemVariants} className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <button
+                onClick={startChallenge}
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-3 rounded-xl bg-[#ffd54f] font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                🔁 Réessayer ce défi
+              </button>
+              <button
+                onClick={resetGame}
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-3 rounded-xl bg-gray-300 font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                Recommencer le jeu
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* FINISHED */}
+        {stage === "finished" && (
+          <div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="max-w-3xl w-full mt-8 p-6 sm:p-8 bg-white rounded-2xl shadow-2xl relative z-10"
+          >
+            <h2 variants={itemVariants} className="text-3xl sm:text-4xl font-bold mb-8 text-center">
+              🎉 Histoire complète d'Owly 🎉
+            </h2>
+            {STORY_PARAGRAPHS.map((p, i) => (
+              <p 
+                key={i} 
+                variants={itemVariants}
+                className="leading-7 text-base sm:text-lg mb-4"
+              >
+                {p}
+              </p>
+            ))}
+            <button
+              variants={itemVariants}
+              onClick={resetGame}
+              whileTap={{ scale: 0.95 }}
+              className="w-full sm:w-auto px-8 py-3 rounded-xl bg-[#ffd54f] font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300 mt-6"
+            >
+              🔄 Rejouer
+            </button>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
