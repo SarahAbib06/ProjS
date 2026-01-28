@@ -37,7 +37,11 @@ export default function AudioCall() {
   // Constants
   const safeChat = {
     name: currentCall?.targetUsername || "Utilisateur",
-    avatar: "https://i.pravatar.cc/150?img=5",
+    avatar: currentCall?.targetAvatar ||
+      currentCall?.conversation?.participants?.find(
+        p => p._id === currentCall.targetUserId
+      )?.avatar ||
+      "https://i.pravatar.cc/150?img=5" // Fallback
   };
 
   // --- Logic Helpers ---
@@ -77,19 +81,33 @@ export default function AudioCall() {
   const handleEndCall = () => {
     console.log("📞 Fin appel audio");
     if (globalSocket?.connected) {
-      globalSocket.emit("call-ended", {
-        conversationId: currentCall.conversation?._id,
-        callType: "audio",
-        duration: callDuration,
-        initiatorId: currentCall?.isInitiator ? user._id : currentCall?.targetUserId,
-        startTime: callStartTime
-      });
-      if (currentCall?.targetUserId) {
-        globalSocket.emit("hang-up", {
+      // 🆕 Détecter si c'est une annulation (pas encore accepté) ou un hang-up normal
+      const isCallCancellation = !callAccepted && currentCall?.isInitiator;
+
+      if (isCallCancellation) {
+        // Annuler l'appel avant qu'il soit accepté
+        globalSocket.emit("cancel-call", {
           conversationId: currentCall.conversation?._id,
           toUserId: currentCall.targetUserId,
           callId: currentCall.callId
         });
+        console.log("✅ Appel annulé avant acceptation");
+      } else {
+        // Appel normal en cours ou déjà accepté
+        globalSocket.emit("call-ended", {
+          conversationId: currentCall.conversation?._id,
+          callType: "audio",
+          duration: callDuration,
+          initiatorId: currentCall?.isInitiator ? user._id : currentCall?.targetUserId,
+          startTime: callStartTime
+        });
+        if (currentCall?.targetUserId) {
+          globalSocket.emit("hang-up", {
+            conversationId: currentCall.conversation?._id,
+            toUserId: currentCall.targetUserId,
+            callId: currentCall.callId
+          });
+        }
       }
     }
     cleanupResources();
@@ -310,7 +328,7 @@ export default function AudioCall() {
       {/* Background */}
       <div
         className={`
-             relative shadow-xl overflow-hidden bg-[#d9b899] 
+             relative shadow-xl overflow-hidden bg-gradient-to-br from-yellow-400 to-yellow-600 
              transition-all duration-300 ease-in-out flex flex-col items-center justify-center
              ${isMinimized
             ? "fixed bottom-6 right-6 w-48 h-32 rounded-xl z-[9999] border-2 border-white"
@@ -349,8 +367,9 @@ export default function AudioCall() {
             <div className="text-center">
               <h2 className="text-2xl font-bold text-white mb-2 shadow-sm">{safeChat.name}</h2>
               <p className="text-white/80 font-medium">{status}</p>
-              {isPeerConnected && (
-                <p className="text-xl text-yellow-300 font-bold mt-2 font-mono bg-black/20 px-4 py-1 rounded-full inline-block">
+              {/* 🆕 Timer affiché dès que callDuration > 0 */}
+              {callDuration > 0 && (
+                <p className="text-xl text-black font-bold mt-2 font-mono bg-white/90 px-4 py-1 rounded-full inline-block">
                   {formatDuration(callDuration)}
                 </p>
               )}

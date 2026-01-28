@@ -51,15 +51,27 @@ export default function IncomingCallModal() {
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 20 }}
-          className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-8 mx-4 max-w-md w-full shadow-2xl"
+          className={`rounded-2xl p-8 mx-4 max-w-md w-full shadow-2xl ${incomingCall.callType === 'video'
+              ? 'bg-gradient-to-br from-[#d9b899] to-[#c4a882]'
+              : 'bg-gradient-to-br from-yellow-400 to-yellow-600'
+            }`}
         >
           <div className="text-center text-white">
-            {/* Avatar/Image */}
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/20 flex items-center justify-center">
-              {incomingCall.callType === 'audio' ? (
-                <Phone size={40} className="text-white" />
+            {/* 🆕 Avatar/Image - Vraie photo de profil */}
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+              {incomingCall.fromAvatar ? (
+                <img
+                  src={incomingCall.fromAvatar}
+                  alt={incomingCall.fromUsername || "Utilisateur"}
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                <Video size={40} className="text-white" />
+                // Fallback si pas d'avatar
+                incomingCall.callType === 'audio' ? (
+                  <Phone size={40} className="text-white" />
+                ) : (
+                  <Video size={40} className="text-white" />
+                )
               )}
             </div>
 

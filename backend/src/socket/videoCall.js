@@ -6,15 +6,15 @@ import Conversation from '../models/Conversation.js';
 import jwt from 'jsonwebtoken';
 
 export default function setupVideoCall(io) {
-  
+
   // MIDDLEWARE D'AUTHENTIFICATION GLOBAL
   io.use(async (socket, next) => {
     try {
       console.log("Tentative auth WebSocket vidéo...");
-      
+
       // Récupérer le token du handshake
       const token = socket.handshake.auth.token;
-      
+
       if (!token) {
         console.log(" Token manquant dans handshake.auth");
         return next(new Error("Token manquant"));
@@ -22,11 +22,11 @@ export default function setupVideoCall(io) {
 
       const cleanToken = token.replace("Bearer ", "");
       const decoded = jwt.verify(cleanToken, process.env.JWT_SECRET);
-      
+
       // Vérifier que l'utilisateur existe
       const User = await import('../models/User.js').then(module => module.default);
       const user = await User.findById(decoded.id);
-      
+
       if (!user) {
         console.log("Utilisateur non trouvé:", decoded.id);
         return next(new Error("Utilisateur non trouvé"));
@@ -35,10 +35,11 @@ export default function setupVideoCall(io) {
       // Attacher l'userId au socket
       socket.userId = user._id.toString();
       socket.username = user.username;
-      
+      socket.userAvatar = user.avatar; // 🆕 Ajouter l'avatar
+
       console.log("User authentifié pour vidéo:", socket.userId);
       next();
-      
+
     } catch (error) {
       console.error("Auth WebSocket vidéo failed:", error.message);
       next(new Error("Authentication failed"));
@@ -52,11 +53,12 @@ export default function setupVideoCall(io) {
     if (socket.userId) {
       users[socket.userId] = socket.id;
       console.log("Registered user:", socket.userId, "->", socket.id);
-      
+
       // Envoyer confirmation d'authentification
-      socket.emit("video-auth-success", { 
+      socket.emit("video-auth-success", {
         userId: socket.userId,
-        username: socket.username 
+        username: socket.username,
+        avatar: socket.userAvatar // 🆕 Inclure l'avatar
       });
     }
 
@@ -68,10 +70,10 @@ export default function setupVideoCall(io) {
           return socket.emit("call-error", { message: "Non authentifié" });
         }
 
-        console.log("Initiation d'appel:", { 
-          conversationId, 
+        console.log("Initiation d'appel:", {
+          conversationId,
           userId: userId,
-          username: socket.username 
+          username: socket.username
         });
 
         // Récupérer la conversation
@@ -96,7 +98,7 @@ export default function setupVideoCall(io) {
           userId: userId,
           conversationType: conversation.type
         });
-        
+
         if (conversation.type === "private") {
           otherParticipantId = conversation.Id_participant.find(
             participant => {
@@ -106,9 +108,9 @@ export default function setupVideoCall(io) {
               return match;
             }
           );
-          
+
           console.log("🔍 otherParticipantId trouvé:", otherParticipantId?.toString());
-          
+
           if (!otherParticipantId) {
             return socket.emit("call-error", { message: "Participant non trouvé" });
           }
@@ -126,6 +128,7 @@ export default function setupVideoCall(io) {
         io.to(targetSocketId).emit("incoming-call", {
           fromUserId: userId,
           fromUsername: socket.username,
+          fromAvatar: socket.userAvatar, // 🆕 Ajouter l'avatar de l'appelant
           conversationId,
           conversationName: conversation.type === "private" ? null : conversation.groupName,
           callType,
@@ -153,11 +156,11 @@ export default function setupVideoCall(io) {
     socket.on("answer-call", async ({ conversationId, fromUserId, callId }) => {
       try {
         const userId = socket.userId;
-        console.log('📥 answer-call reçu (destinataire prêt):', { 
-          fromUserId, 
-          conversationId, 
-          callId, 
-          userId 
+        console.log('📥 answer-call reçu (destinataire prêt):', {
+          fromUserId,
+          conversationId,
+          callId,
+          userId
         });
 
         // 1. Notifier l'appelant que le destinataire a accepté
@@ -223,7 +226,7 @@ export default function setupVideoCall(io) {
     socket.on("reject-call", ({ conversationId, fromUserId, callId }) => {
       const userId = socket.userId;
       const targetSocket = users[fromUserId];
-      
+
       if (targetSocket) {
         io.to(targetSocket).emit("call-rejected", {
           fromUserId: userId,
@@ -239,7 +242,7 @@ export default function setupVideoCall(io) {
     socket.on("cancel-call", ({ conversationId, toUserId, callId }) => {
       const userId = socket.userId;
       const targetSocket = users[toUserId];
-      
+
       if (targetSocket) {
         io.to(targetSocket).emit("call-cancelled", {
           fromUserId: userId,
@@ -286,8 +289,8 @@ export default function setupVideoCall(io) {
         if (targetSocket === socket.id) {
           console.warn('⚠️ OFFER cible est le même socket que l\'émetteur, émission ignorée');
         } else {
-          io.to(targetSocket).emit("offer", { 
-            fromUserId: userId, 
+          io.to(targetSocket).emit("offer", {
+            fromUserId: userId,
             fromUsername: socket.username,
             conversationId,
             sdp,
@@ -333,8 +336,8 @@ export default function setupVideoCall(io) {
         if (targetSocket === socket.id) {
           console.warn('⚠️ ANSWER cible est le même socket que l\'émetteur, émission ignorée');
         } else {
-          io.to(targetSocket).emit("answer", { 
-            sdp, 
+          io.to(targetSocket).emit("answer", {
+            sdp,
             fromUserId: userId,
             fromUsername: socket.username,
             conversationId,
@@ -376,8 +379,8 @@ export default function setupVideoCall(io) {
         if (targetSocket === socket.id) {
           console.warn('⚠️ ICE relay cible est le même socket que l\'émetteur, émission ignorée');
         } else {
-          io.to(targetSocket).emit("ice-candidate", { 
-            candidate, 
+          io.to(targetSocket).emit("ice-candidate", {
+            candidate,
             fromUserId: userId,
             fromUsername: socket.username,
             conversationId,
@@ -574,7 +577,7 @@ export default function setupVideoCall(io) {
     // DÉCONNEXION
     socket.on("disconnect", () => {
       console.log("Socket vidéo déconnecté:", socket.id, "- User:", socket.userId);
-      
+
       // Retirer l'utilisateur de la map
       if (socket.userId && users[socket.userId] === socket.id) {
         delete users[socket.userId];

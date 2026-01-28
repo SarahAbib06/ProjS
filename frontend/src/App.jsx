@@ -31,116 +31,121 @@ import { useEffect } from "react";
 export default function App() {
   const currentUser = JSON.parse(localStorage.getItem("user")); // récupère l'utilisateur connecté
   useEffect(() => {
-  if (!currentUser) return;
+    if (!currentUser) return;
 
-  const fetchUserTheme = async () => {
-    try {
-      const res = await fetch(`/api/user/${currentUser._id}`);
-      const data = await res.json();
-      const theme = data.theme;
+    const fetchUserTheme = async () => {
+      try {
+        const res = await fetch(`/api/user/${currentUser._id}`);
+        const data = await res.json();
+        const theme = data.theme;
 
-      if (theme.type === "gradient") {
-        document.body.style.background = theme.value;
-      } else if (theme.type === "color" || theme.type === "seasonal") {
-        document.body.style.background = theme.value;
-      } else if (theme.type === "upload") {
-        document.body.style.backgroundImage = `url(${theme.value})`;
-        document.body.style.backgroundSize = "cover";
-        document.body.style.backgroundRepeat = "no-repeat";
+        if (theme.type === "gradient") {
+          document.body.style.background = theme.value;
+        } else if (theme.type === "color" || theme.type === "seasonal") {
+          document.body.style.background = theme.value;
+        } else if (theme.type === "upload") {
+          document.body.style.backgroundImage = `url(${theme.value})`;
+          document.body.style.backgroundSize = "cover";
+          document.body.style.backgroundRepeat = "no-repeat";
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    };
 
-  fetchUserTheme();
-}, []);
+    fetchUserTheme();
+  }, []);
 
   return (
     <Router>
       <AuthProvider>
-          <AppelProvider>
-            <ChatProvider>
-              <Routes>
-            {/* Route par défaut */}
-            <Route path="/" element={<Welcome />} />
+        <AppelProvider>
+          {/* 🆕 Modals d'appel globaux - toujours montés */}
+          <IncomingCallModal />
+          <VideoCall />
+          <AudioCall />
 
-            {/* Routes publiques */}
-            <Route path="/welcome" element={<Welcome />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/OtpPage" element={<OtpPage />} />
-            <Route path="/ForgotPassword" element={<ForgotPassword />} />
-            <Route path="/profil-pic" element={<ProfilPic />} />
+          <ChatProvider>
+            <Routes>
+              {/* Route par défaut */}
+              <Route path="/" element={<Welcome />} />
 
-            {/* Layout avec sidebar/header */}
-            <Route element={<MainLayout />}>
-              {/* Ces pages doivent être accessibles avec layout mais protégées */}
-              <Route
-                path="/MessagesPage"
-                element={
-                  <ProtectedRoute>
-                    <MessagesPage />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Routes publiques */}
+              <Route path="/welcome" element={<Welcome />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/OtpPage" element={<OtpPage />} />
+              <Route path="/ForgotPassword" element={<ForgotPassword />} />
+              <Route path="/profil-pic" element={<ProfilPic />} />
 
-              <Route
-                path="/Settings"
-                element={
-                  <ProtectedRoute>
-                    <SettingsPage />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Layout avec sidebar/header */}
+              <Route element={<MainLayout />}>
+                {/* Ces pages doivent être accessibles avec layout mais protégées */}
+                <Route
+                  path="/MessagesPage"
+                  element={
+                    <ProtectedRoute>
+                      <MessagesPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-              
+                <Route
+                  path="/Settings"
+                  element={
+                    <ProtectedRoute>
+                      <SettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/tic-tac-toe2"
-                element={
-                  <ProtectedRoute>
-                    <TicTacToe2 />
-                  </ProtectedRoute>
-                }
-              />
 
-              <Route
-                path="/memory-game"
-                element={
-                  <ProtectedRoute>
-                    <MemoryGame />
-                  </ProtectedRoute>
-                }
-              />
 
-              <Route
-                path="/games"
-                element={
-                  <ProtectedRoute>
-                    <GamesPage />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/tic-tac-toe2"
+                  element={
+                    <ProtectedRoute>
+                      <TicTacToe2 />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/rock-paper-scissors"
-                element={
-                  <ProtectedRoute>
-                    <RockPaper />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/memory-game"
+                  element={
+                    <ProtectedRoute>
+                      <MemoryGame />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/owly-quiz"
-                element={
-                  <ProtectedRoute>
-                    <OwlyQuiz />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
+                <Route
+                  path="/games"
+                  element={
+                    <ProtectedRoute>
+                      <GamesPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/rock-paper-scissors"
+                  element={
+                    <ProtectedRoute>
+                      <RockPaper />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/owly-quiz"
+                  element={
+                    <ProtectedRoute>
+                      <OwlyQuiz />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
             </Routes>
           </ChatProvider>
         </AppelProvider>

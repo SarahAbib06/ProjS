@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppel } from "../context/AppelContext";
 import { useAuth } from "../hooks/useAuth";
-import { Phone, Video, Mic, Volume2, Users, MicOff, VideoOff, Maximize2, Minimize2 } from "lucide-react";
+import { Phone, Video, Mic, Volume2, Users, MicOff, VideoOff, Maximize2, Minimize2, Monitor } from "lucide-react";
 
 export default function VideoCall() {
   const { user } = useAuth();
@@ -18,6 +18,7 @@ export default function VideoCall() {
   // UI States
   const [isMinimized, setIsMinimized] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false); // 🆕 Partage d'écran
 
   // Call States
   const [status, setStatus] = useState(currentCall?.isInitiator ? "Appel en cours..." : "Appel entrant");
@@ -39,11 +40,16 @@ export default function VideoCall() {
   const isInitializedRef = useRef(false);
   const durationIntervalRef = useRef(null);
   const retryTimeoutRef = useRef(null);
+  const screenStreamRef = useRef(null); // 🆕 Stream du partage d'écran
 
   // Constants
   const safeChat = {
     name: currentCall?.targetUsername || "Utilisateur",
-    avatar: "https://i.pravatar.cc/150?img=5", // Placeholder as avatar is not yet passed in context
+    avatar: currentCall?.targetAvatar ||
+      currentCall?.conversation?.participants?.find(
+        p => p._id === currentCall.targetUserId
+      )?.avatar ||
+      "https://i.pravatar.cc/150?img=5" // Fallback
   };
 
   // --- Logic Helpers ---
@@ -105,20 +111,34 @@ export default function VideoCall() {
   const handleEndCall = () => {
     console.log("📞 Fin appel vidéo");
     if (globalSocket?.connected) {
-      globalSocket.emit("call-ended", {
-        conversationId: currentCall.conversation?._id,
-        callType: "video", // or callType
-        duration: callDuration,
-        initiatorId: currentCall?.isInitiator ? user._id : currentCall?.targetUserId,
-        startTime: callStartTime
-      });
+      // 🆕 Détecter si c'est une annulation (pas encore accepté) ou un hang-up normal
+      const isCallCancellation = !callAccepted && currentCall?.isInitiator;
 
-      if (currentCall?.targetUserId) {
-        globalSocket.emit("hang-up", {
+      if (isCallCancellation) {
+        // Annuler l'appel avant qu'il soit accepté
+        globalSocket.emit("cancel-call", {
           conversationId: currentCall.conversation?._id,
           toUserId: currentCall.targetUserId,
           callId: currentCall.callId
         });
+        console.log("✅ Appel annulé avant acceptation");
+      } else {
+        // Appel normal en cours ou déjà accepté
+        globalSocket.emit("call-ended", {
+          conversationId: currentCall.conversation?._id,
+          callType: "video",
+          duration: callDuration,
+          initiatorId: currentCall?.isInitiator ? user._id : currentCall?.targetUserId,
+          startTime: callStartTime
+        });
+
+        if (currentCall?.targetUserId) {
+          globalSocket.emit("hang-up", {
+            conversationId: currentCall.conversation?._id,
+            toUserId: currentCall.targetUserId,
+            callId: currentCall.callId
+          });
+        }
       }
     }
 
@@ -180,6 +200,75 @@ export default function VideoCall() {
     }
   };
 
+  // 🆕 Partage d'écran
+  const startScreenShare = async () => {
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { cursor: "always" },
+        audio: false
+      });
+
+      screenStreamRef.current = screenStream;
+
+      // Remplacer le track vidéo dans la PeerConnection
+      const videoTrack = screenStream.getVideoTracks()[0];
+      const sender = pcRef.current?.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) {
+        await sender.replaceTrack(videoTrack);
+      }
+
+      // Afficher dans le local video
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = screenStream;
+      }
+
+      setIsScreenSharing(true);
+
+      // Notifier l'autre participant
+      if (globalSocket?.connected && currentCall?.targetUserId) {
+        globalSocket.emit("start-screen-share", {
+          conversationId: currentCall.conversation?._id,
+          toUserId: currentCall.targetUserId
+        });
+      }
+
+      // Écouter l'arrêt du partage (bouton navigateur)
+      videoTrack.onended = () => {
+        stopScreenShare();
+      };
+    } catch (error) {
+      console.error("❌ Erreur partage écran:", error);
+    }
+  };
+
+  const stopScreenShare = async () => {
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(track => track.stop());
+      screenStreamRef.current = null;
+    }
+
+    // Restaurer la caméra
+    if (localStreamRef.current && pcRef.current) {
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      const sender = pcRef.current.getSenders().find(s => s.track?.kind === 'video');
+      if (sender && videoTrack) {
+        await sender.replaceTrack(videoTrack);
+      }
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current;
+      }
+    }
+
+    setIsScreenSharing(false);
+
+    if (globalSocket?.connected && currentCall?.targetUserId) {
+      globalSocket.emit("stop-screen-share", {
+        conversationId: currentCall.conversation?._id,
+        toUserId: currentCall.targetUserId
+      });
+    }
+  };
+
   // --- WebRTC Logic ---
 
   const createPeerConnection = () => {
@@ -190,7 +279,14 @@ export default function VideoCall() {
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
           { urls: "stun:stun1.l.google.com:19302" }
-        ]
+          // 📌 TODO PRODUCTION: Ajouter un serveur TURN
+          // {
+          //   urls: "turn:your-turn-server.com:3478",
+          //   username: "username",
+          //   credential: "password"
+          // }
+        ],
+        iceCandidatePoolSize: 10 // 🆕 Optimisation: pré-générer des candidates
       });
 
       pcRef.current = pc;
@@ -332,11 +428,8 @@ export default function VideoCall() {
       if (fromUserId === user?._id || callId !== currentCall.callId) return;
       setCallState('exchanging');
 
-      let waitCount = 0;
-      while (!localStreamRef.current && waitCount < 50) {
-        await new Promise(r => setTimeout(r, 100));
-        waitCount++;
-      }
+      // ❌ SUPPRIMÉ: Boucle d'attente synchrone (anti-pattern WebRTC)
+      // Les streams doivent être déjà disponibles avant de créer la PeerConnection
 
       if (!pcRef.current) createPeerConnection();
 
@@ -406,7 +499,11 @@ export default function VideoCall() {
       try {
         setCallState('initiating');
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+          video: {
+            width: { ideal: 640, max: 1280 },
+            height: { ideal: 480, max: 720 },
+            frameRate: { ideal: 24, max: 30 }
+          }, // 🆕 Optimisé pour réduire la latence
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
         });
         localStreamRef.current = stream;
@@ -422,13 +519,13 @@ export default function VideoCall() {
               fromUserId: currentCall.targetUserId,
               callId: currentCall.callId
             });
-            setTimeout(() => {
-              globalSocket.emit('call-ready', {
-                conversationId: currentCall.conversation?._id,
-                fromUserId: currentCall.targetUserId,
-                callId: currentCall.callId
-              });
-            }, 800);
+            // ❌ SUPPRIMÉ: setTimeout de 800ms (latence arbitraire)
+            // Émission immédiate pour réduire la latence
+            globalSocket.emit('call-ready', {
+              conversationId: currentCall.conversation?._id,
+              fromUserId: currentCall.targetUserId,
+              callId: currentCall.callId
+            });
           }
           setCallAccepted(true);
         } else {
@@ -482,7 +579,7 @@ export default function VideoCall() {
             bg-black/40 backdrop-blur-sm px-3 py-2 rounded-xl"
           >
             {/* MINIMIZE */}
-            <button
+            {/*<button
               onClick={() => {
                 setIsMinimized(true);
                 setIsFullscreen(false);
@@ -490,7 +587,7 @@ export default function VideoCall() {
               className="hover:scale-110 transition-transform"
             >
               <Minimize2 size={20} color="white" />
-            </button>
+            </button>*/}
 
             {/* FULLSCREEN */}
             <button
@@ -595,6 +692,15 @@ export default function VideoCall() {
               className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${cameraOff ? 'bg-red-500 text-white' : 'bg-white text-black hover:bg-gray-200'}`}
             >
               {cameraOff ? <VideoOff size={22} /> : <Video size={22} />}
+            </button>
+
+            {/* 🆕 Partage d'écran */}
+            <button
+              onClick={isScreenSharing ? stopScreenShare : startScreenShare}
+              className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${isScreenSharing ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-gray-200'
+                }`}
+            >
+              <Monitor size={22} />
             </button>
 
             {/* HANGUP */}
