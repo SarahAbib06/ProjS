@@ -41,6 +41,7 @@ export default function VideoCall() {
   const durationIntervalRef = useRef(null);
   const retryTimeoutRef = useRef(null);
   const screenStreamRef = useRef(null); // 🆕 Stream du partage d'écran
+  const callEndedEmittedRef = useRef(false); // 🔧 Empêcher les duplications
 
   // Constants
   const safeChat = {
@@ -104,12 +105,32 @@ export default function VideoCall() {
     remoteStreamRef.current = new MediaStream();
     pendingIceCandidatesRef.current = [];
     isInitializedRef.current = false;
+
+    // 🔧 Réinitialiser tous les états UI
+    setCallDuration(0);
+    setCallStartTime(null);
+    setIsPeerConnected(false);
+    setIsMuted(false);
+    setCameraOff(false);
+    setIsScreenSharing(false);
+    setCallState('initiating');
+    callEndedEmittedRef.current = false;
   };
 
   // --- Handlers ---
 
   const handleEndCall = () => {
     console.log("📞 Fin appel vidéo");
+
+    // 🔧 Empêcher les émissions multiples
+    if (callEndedEmittedRef.current) {
+      console.log("⚠️ call-ended déjà émis, nettoyage seulement");
+      cleanupResources();
+      stopRingtone();
+      endCall();
+      return;
+    }
+
     if (globalSocket?.connected) {
       // 🆕 Détecter si c'est une annulation (pas encore accepté) ou un hang-up normal
       const isCallCancellation = !callAccepted && currentCall?.isInitiator;
@@ -124,6 +145,7 @@ export default function VideoCall() {
         console.log("✅ Appel annulé avant acceptation");
       } else {
         // Appel normal en cours ou déjà accepté
+        callEndedEmittedRef.current = true; // 🔧 Marquer comme émis
         globalSocket.emit("call-ended", {
           conversationId: currentCall.conversation?._id,
           callType: "video",

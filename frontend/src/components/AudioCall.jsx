@@ -33,6 +33,7 @@ export default function AudioCall() {
   const pendingIceCandidatesRef = useRef([]);
   const isInitializedRef = useRef(false);
   const durationIntervalRef = useRef(null);
+  const callEndedEmittedRef = useRef(false); // 🔧 Empêcher les duplications
 
   // Constants
   const safeChat = {
@@ -76,6 +77,13 @@ export default function AudioCall() {
     remoteStreamRef.current = new MediaStream();
     pendingIceCandidatesRef.current = [];
     isInitializedRef.current = false;
+
+    // 🔧 Réinitialiser tous les états UI
+    setCallDuration(0);
+    setCallStartTime(null);
+    setIsPeerConnected(false);
+    setIsMuted(false);
+    callEndedEmittedRef.current = false;
   };
 
   const handleEndCall = () => {
