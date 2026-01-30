@@ -234,7 +234,7 @@ export const AppelProvider = ({ children }) => {
       callId,
       targetUserId: otherParticipant._id,
       targetUsername: otherParticipant.username,
-      targetAvatar: otherParticipant.avatar, // 🆕 Ajouter l'avatar
+      targetAvatar: otherParticipant.profilePicture, // 🆕 Utiliser profilePicture (Cloudinary)
       callType: type
     };
     // Tant que la cible n'a pas accepté, callAccepted reste false

@@ -44,13 +44,22 @@ export default function VideoCall() {
   const callEndedEmittedRef = useRef(false); // 🔧 Empêcher les duplications
 
   // Constants
+  // Helper pour générer URL d'avatar avec initiales en fallback
+  const getAvatarUrl = (profilePicture, username) => {
+    if (profilePicture) return profilePicture;
+    const name = username || "User";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=F9EE34&color=000&bold=true&size=128`;
+  };
+
   const safeChat = {
     name: currentCall?.targetUsername || "Utilisateur",
-    avatar: currentCall?.targetAvatar ||
+    avatar: getAvatarUrl(
+      currentCall?.targetAvatar ||
       currentCall?.conversation?.participants?.find(
         p => p._id === currentCall.targetUserId
-      )?.avatar ||
-      "https://i.pravatar.cc/150?img=5" // Fallback
+      )?.profilePicture,
+      currentCall?.targetUsername
+    )
   };
 
   // --- Logic Helpers ---
@@ -635,7 +644,15 @@ export default function VideoCall() {
             />
             {!isPeerConnected && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-white z-10 flex-col gap-4">
-                <img src={safeChat.avatar} className="w-24 h-24 rounded-full animate-pulse" />
+                <img
+                  src={safeChat.avatar}
+                  className="w-24 h-24 rounded-full animate-pulse"
+                  alt={safeChat.name}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(safeChat.name)}&background=F9EE34&color=000&bold=true&size=128`;
+                  }}
+                />
                 <p className="text-xl font-medium">{status}</p>
               </div>
             )}
@@ -680,6 +697,11 @@ export default function VideoCall() {
               <img
                 src={safeChat.avatar}
                 className="w-8 h-8 rounded-full border border-white"
+                alt={safeChat.name}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(safeChat.name)}&background=F9EE34&color=000&bold=true&size=128`;
+                }}
               />
               <span className="font-semibold text-white tracking-wide">{safeChat.name}</span>
             </div>

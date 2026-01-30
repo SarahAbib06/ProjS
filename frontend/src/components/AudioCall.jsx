@@ -36,13 +36,22 @@ export default function AudioCall() {
   const callEndedEmittedRef = useRef(false); // 🔧 Empêcher les duplications
 
   // Constants
+  // Helper pour générer URL d'avatar avec initiales en fallback
+  const getAvatarUrl = (profilePicture, username) => {
+    if (profilePicture) return profilePicture;
+    const name = username || "User";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=F9EE34&color=000&bold=true&size=128`;
+  };
+
   const safeChat = {
     name: currentCall?.targetUsername || "Utilisateur",
-    avatar: currentCall?.targetAvatar ||
+    avatar: getAvatarUrl(
+      currentCall?.targetAvatar ||
       currentCall?.conversation?.participants?.find(
         p => p._id === currentCall.targetUserId
-      )?.avatar ||
-      "https://i.pravatar.cc/150?img=5" // Fallback
+      )?.profilePicture,
+      currentCall?.targetUsername
+    )
   };
 
   // --- Logic Helpers ---
@@ -368,6 +377,11 @@ export default function AudioCall() {
             <img
               src={safeChat.avatar}
               className={`${isMinimized ? 'w-16 h-16' : 'w-32 h-32'} rounded-full border-4 border-white shadow-xl object-cover transition-all`}
+              alt={safeChat.name}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(safeChat.name)}&background=F9EE34&color=000&bold=true&size=128`;
+              }}
             />
           </div>
 
